@@ -79,7 +79,6 @@ static struct ExpressionBuilder {
                 }
                 else if (currExp->oper == boolOperator::NOTHING)  //currExp->oper == boolOperator::NOTHING
                     currExp->oper = boolOperator::OR;
-                
                 break;
             case '~':
                 currExp->flipNegate();
@@ -99,8 +98,7 @@ static struct ExpressionBuilder {
                     if (currExp->valFound.second == 0)
                         retExp[currExp->valFound.first - 28u].parentExpIndex = parentExp->expIndex - 28u;
 
-                    currExp->lv = -999999;
-                    //retExp.pop_back(); fix bug: can't use this
+                    currExp->lv = -999999; //retExp.pop_back(); fix bug: can't use this
                 }
                 else {
                     addValAny(currExp, newNumBoolFound, varFound);
@@ -219,36 +217,42 @@ struct CondStack {
     }
 
     void getStackAns(const char* cond, const CondStack& prev) {
-        const size_t prev_boolIndexLen = prev.boolIndexLen;
-
-        size_t allPossBool, newNumBoolFound = 0, varFound[26] = { 0u };//bitset: 2=old stack has variable, 1=found, 3=2|1, 0=not found          
-        FOR(i, prev_boolIndexLen) {
-            varFound[prev.boolVarIndex[i]] = 2u;
-            boolVarIndex[i] = prev.boolVarIndex[i];
-        }
-
-        vector<Expression> exps;
-        ExpressionBuilder::stringToExp(exps, cond, newNumBoolFound, varFound);
-        std::sort(exps.begin(), exps.end(), sortExpression());
-        while (exps.back().lv < -10) exps.pop_back();
-
-        allPossBool = 1u << newNumBoolFound;//works on case: newNumBoolFound = 0
-
-        boolIndexLen = prev_boolIndexLen;
-        FOR(i, 26u)
-            if (varFound[i] == 1u)// 0|1=1, 2|1=3
-                boolVarIndex[boolIndexLen++] = i;        
-        
-        size_t memVal[75];//0-25=A-Z, 26=0, 27=1, 28-74=Exps
-        memVal[26] = 0u; memVal[27] = 1u;
-
         uint32_t(*boolOperation[3])(uint32_t*, uint32_t, uint32_t*) = {
             { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret &= VALWNEGATE(valMem,i,expVals); return ret; } },
             { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret |= VALWNEGATE(valMem,i,expVals); return ret; } },
             { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { return VALWNEGATE(valMem,0,expVals); } }
         };
 
-        const size_t lastExpsIndex = exps.size() - 1;
+        const size_t prev_boolIndexLen = prev.boolIndexLen;
+
+        size_t allPossBool, findValAns[2][26], findValAnsLen[2];
+        vector<Expression> exps;
+        {
+            size_t newNumBoolFound = 0, varFound[26] = { 0u };//bitset: 2=old stack has variable, 1=found, 3=2|1, 0=not found          
+            FOR(i, prev_boolIndexLen) {
+                varFound[prev.boolVarIndex[i]] = 2u;
+                boolVarIndex[i] =  prev.boolVarIndex[i];
+            }
+
+            ExpressionBuilder::stringToExp(exps, cond, newNumBoolFound, varFound);
+            std::sort(exps.begin(), exps.end(), sortExpression());
+            while (exps.back().lv < -10) exps.pop_back();
+
+            allPossBool = 1u << newNumBoolFound;//works on case: newNumBoolFound = 0
+
+            boolIndexLen = prev_boolIndexLen;
+            FOR(i, 26u) 
+                if (varFound[i] == 1u) // 0|1=1, 2|1=3
+                    boolVarIndex[boolIndexLen++] = i;
+
+            findValAnsLen[0] = findValAnsLen[1] = boolIndexLen;
+            FOR(i, boolIndexLen) findValAns[0][i] = findValAns[1][i] = boolVarIndex[i];
+        }
+
+        size_t memVal[75];//fixed index for variable: 0-25=A-Z, 26=0, 27=1, 28-74=Exps
+        memVal[26] = 0u; memVal[27] = 1u;
+
+        Expression* lastExps = &exps.back();
         for (uint32_t prevAnsMem : prev.allAns[prev.condState]) {
 
             FOR(i, prev_boolIndexLen) {//if prev_boolIndexLen == 0; FOR(j, prev_boolIndexLen, boolIndexLen) will do the job
@@ -267,13 +271,18 @@ struct CondStack {
                 FOR(j, exps.size())
                     memVal[exps[j].expIndex] = boolOperation[exps[j].oper](exps[j].vals, exps[j].len, memVal);
 
-                result = memVal[exps[lastExpsIndex].expIndex];
+                result = memVal[lastExps->expIndex];
                 allAns[result].push_back(boolmem);
 
-                FOR(j, boolIndexLen) {
-                    const uint32_t index = boolVarIndex[j], currBit = memVal[index];
+                for (size_t j = 0; j < findValAnsLen[result]; j++) {
+                    const uint32_t index = findValAns[result][j], currBit = memVal[index];
                     if (finalAns[result][index] == -3)finalAns[result][index] = currBit;
-                    else if (finalAns[result][index] != currBit)finalAns[result][index] = -1;
+                    else if (finalAns[result][index] != currBit) {
+                        findValAnsLen[result]--;
+                        findValAns[result][j] = findValAns[result][findValAnsLen[result]];
+                        finalAns[result][index] = -1;
+                        j--;
+                    }
                 }
             }
         }
