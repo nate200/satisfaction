@@ -16,7 +16,6 @@ using namespace std;
 enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can't convert enum to int ;(
 struct Expression {//1 boolean operation per 1 expression
     boolOperator oper = boolOperator::NOTHING;
-    //size_t oper = 2;
 
     size_t len = 0, vals[70];//0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
     int lv;//highest lv will be calculated first, children have higher lv than their parent
