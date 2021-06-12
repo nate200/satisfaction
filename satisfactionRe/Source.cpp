@@ -64,6 +64,7 @@ static struct ExpressionBuilder {
     static void stringToExp(vector<Expression> &retExp, const char* exp, size_t& newNumBoolFound, size_t* varFound) {
 
         vector<ExpressionInfo> expInfos;
+        expInfos.reserve(66);//prevent reallocation which will mess up all the address
         expInfos.emplace_back(0, 28u, 0u);//lowest lv is not 0
 
         ExpressionInfo* parentExp = nullptr, * currExp = &expInfos.back();
@@ -272,6 +273,13 @@ struct CondStack {
         memVal[26] = 0u; memVal[27] = 1u;
 
         Expression* lastExps = &exps.back();
+
+        //added to prevent vector reallocation
+        uint32_t ansLen = prev.allAns[prev.condState].size() * allPossBool;
+        uint32_t* allAnsTemp = new uint32_t[ansLen], *allAnsTempResult = new uint32_t[ansLen];
+        uint32_t ansLenEach[2] = { 0,0 };
+        ansLen = 0;
+
         for (uint32_t prevAnsMem : prev.allAns[prev.condState]) {
 
             FOR(i, prev_boolIndexLen) {//if prev_boolIndexLen == 0; FOR(j, prev_boolIndexLen, boolIndexLen) will do the job
@@ -291,7 +299,11 @@ struct CondStack {
                     memVal[exps[j].expIndex] = boolOperation[exps[j].oper](exps[j].vals, exps[j].len, memVal);
 
                 result = memVal[lastExps->expIndex];
-                allAns[result].push_back(boolmem);
+
+                allAnsTemp[ansLen] = boolmem;
+                allAnsTempResult[ansLen] = result;
+                ansLen++;
+                ansLenEach[result]++;
 
                 for (size_t j = 0; j < findValAnsLen[result]; j++) {
                     const uint32_t index = findValAns[result][j], currBit = memVal[index];
@@ -306,8 +318,12 @@ struct CondStack {
             }
         }
 
-        if (allAns[0].empty())finalAns[0][0] = -2;
-        else if (allAns[1].empty())finalAns[1][0] = -2;
+        allAns[0].reserve(ansLenEach[0]);
+        allAns[1].reserve(ansLenEach[1]);
+        FOR(i, ansLen) allAns[allAnsTempResult[i]].push_back(allAnsTemp[i]);
+
+        if (ansLenEach[0] == 0)finalAns[0][0] = -2;
+        else if (ansLenEach[1] == 0)finalAns[1][0] = -2;
     }
 
     void switchToElse() {
