@@ -282,21 +282,17 @@ struct CondStack {
 
         for (uint32_t prevAnsMem : prev.allAns[prev.condState]) {
 
-            FOR(i, prev_boolIndexLen) {//if prev_boolIndexLen == 0; FOR(j, prev_boolIndexLen, boolIndexLen) will do the job
-                const size_t bit = prevAnsMem >> i & 1u;
-                memVal[boolVarIndex[i]] = bit;
-            }
+            FOR(i, prev_boolIndexLen) 
+                memVal[boolVarIndex[i]] = prevAnsMem >> i & 1u;
 
             FOR(i, allPossBool) {
-                uint32_t result, boolmem = prevAnsMem | (i << prev_boolIndexLen);//assuming that shifted int is follow by 0s
+                uint32_t result, boolmem = prevAnsMem | i << prev_boolIndexLen;//assuming that shifted int is follow by 0s
 
-                FORS(j, prev_boolIndexLen, boolIndexLen) {
-                    const size_t bit = boolmem >> j & 1u;
-                    memVal[boolVarIndex[j]] = bit;
-                }
+                FORS(j, prev_boolIndexLen, boolIndexLen)
+                    memVal[boolVarIndex[j]] = boolmem >> j & 1u;
 
-                FOR(j, exps.size())
-                    memVal[exps[j].expIndex] = boolOperation[exps[j].oper](exps[j].vals, exps[j].len, memVal);
+                for(const Expression &exp : exps)
+                    memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.len, memVal);
 
                 result = memVal[lastExps->expIndex];
 
