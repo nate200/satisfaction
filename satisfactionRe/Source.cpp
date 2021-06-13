@@ -85,7 +85,7 @@ static struct ExpressionBuilder {
             case '|':
                 addValAny(currExp, newNumBoolFound, varFound);
                 if (currExp->oper == boolOperator::AND) {
-                    if (parentExp != nullptr && parentExp->oper == boolOperator::OR) {
+                    if (parentExp != nullptr && parentExp->oper == boolOperator::OR && currExp->hasNoBracket) {//fix bug: B|(A&C|N) add && currExp->hasNoBracket
                         currExp = &(*parentExp);
                         if (currExp->parentExpIndex != 0xFFFFFFFF)parentExp = &expInfos[currExp->parentExpIndex];//bug fixed: changed to currExp->parentExpIndex != 0xFFFFFFFF
                         else parentExp = nullptr;//A|B|C&D&E&F|G|Y|Z
