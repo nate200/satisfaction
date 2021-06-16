@@ -1,0 +1,146 @@
+for every value in insideEquation
+	if has the same variable
+		if same negation
+			remove that insideEqaution
+		else
+			remove that variable
+
+if insideEquation.len = 0
+	if & return 0;
+	return 1;
+	//why? see the first 4 example what happen to the effected variable
+
+
+X&Y&(~X|W|A)
+X&Y&(0|W|A)
+X&Y&(W|A)
+
+X|Y|(~X&W&A)
+X|Y|(1&W&A)
+X|Y|(W&A)
+
+(X|Y|Z)&(~X&~Y&~Z)
+(0|0|0)&~X&~Y&~Z
+0&~X&~Y&~Z
+0
+
+(X|Y|Z)|(~X&~Y&~Z)
+X|Y|Z|(1&1&1)
+X|Y|Z|1
+1
+
+~A&(A|~B|C|D|E|F|G)
+~A&(0|~B|C|D|E|F|G)
+~A&(~B|C|D|E|F|G)
+
+~A&~B&(~A|Z|X|Y|Q|F)
+~A&~B&(0|Z|X|Y|Q|F)
+~A&~B&(Z|X|Y|Q|F)
+
+~A&B&(A|~B|X|Y)
+~A&B&(0|0|X|Y)
+~A&B&(X|Y) 
+
+X&Y&(~X|~Y|(A&B&(C|D)))
+X&Y&(0|0|(A&B&(C|D)))
+X&Y&((A&B&(C|D)))
+X&Y&A&B&(C|D)
+
+X&Y&(~X|~Y|A)
+X&Y&(0|0|A)
+X&Y&A
+
+A&B&C&(~A|~B|~C|X|Y)&X
+A&B&C&(0|0|0|*X*|Y)&*X*
+A&B&C&X
+
+~A&Y&X&(~X|~Y|(X&Y&A))
+~A&Y&X&(~X|~Y|A)
+~A&Y&X&(0|0|0)
+0
+
+~A&Y&X&(~X|~Y|(~X&~Y&A))
+~A&Y&X&(~X|~Y|A)
+~A&Y&X&(0|0|0)
+0
+
+X&Y&(X|A|B)
+X&Y
+
+~((X|Y|Z)&(~X&~Y&~Z))&B
+~((0|0|0)&(~X&~Y&~Z))&B
+~(0)&B
+B
+
+~(A&~((X|Y|Z)&(~X&~Y&~Z))&B)&(~A&~B)
+~(A&~(0)&B)&(~A&~B)
+~(A&B)&(~A&~B)
+(~A|~B)&(~A&~B)
+~A&~B
+
+~(~A&~B&U)&(~A&~B)
+(A|B|~U)&(~A&~B)
+(0|0|~U)&(~A&~B)
+~U&~A&~B
+
+X&Y&(~X|~Y|~(A|B))
+X&Y&(0|0|(~A&~B))
+X&Y&(~A&~B)
+X&Y&~A&~B
+
+((~A|B&C&D&A|C|D&B&C|F)&((C|D)&~F)&((C|D&A)&~F&T)&U)|F
+( (~A|1|C|1|F) & (C|D)&~F & (C|(D&A)) &~F&T &U)|F
+( (~A|C) & (C|D) &~F & (C|(D&A)) &T &U)|F
+( (~A|C) & (C|D) & (C|(D&A)) &T &U)|F
+((~A|C)&(C|D)&(C|(D&A))&T&U)|F
+
+X|(~X&(C|D|(G&T)))|C|(~D&~(~G&~T))
+X|((C|D|(G&T)))|C|(~D&(G|T))
+X|C|D|(G&T)|C|(~D&(G|T))
+X|D|(G&T)|C|(~D&(G|T))
+X|D|(G&T)|C|((G|T))
+X|D|(G&T)|C|G|T
+X|D|C|G|T
+
+~A|B&C&D&A|C|D&B&C|F
+~A|C|F
+
+B&((~R&Q|J)|A|B|A|B|C|H)
+B
+
+B|~~(((~A&B|C)&(A&B&(A&B&C))&F)|N)
+B|(((~A&B|C)&A&B&&F)|N)
+B|((~A&B|C)&A&B&&F)|N
+B|N
+
+((~A&B|C)&D&E&P&B&O&I)|B&((~R&Q|J)&A&B&A&B&C&H)|K|((~S&T|L)&A&M&C&G)|B|~~(((~A&B|C)&(A&B&(A&B&C))&F)|N)
+((~A&B|C)&D&E&P&B&O&I)| B&((~R&Q|J)&A&B&A&B&C&H) |K| ((~S&T|L)&A&M&C&G) |B| (((~A&B|C)&(A&B&(A&B&C))&F)|N)
+((~A&B|C)&D&E&P&B&O&I)| B&(~R&Q|J)&A&C&H   |K| ((~S&T|L)&A&M&C&G) |B| (((~A&B|C)&A&B&F)|N)
+                                            K| ((~S&T|L)&A&M&C&G) |B|  ((~A&B|C)&A&B&F)|N
+                                            K| ((~S&T|L)&A&M&C&G) |B|                  |N
+K|((~S&T|L)&A&M&C&G)|B|N
+
+
+X&W|~(~X&Z)|(Y|~Z)
+X&W|(X|~Z)|Y|~Z
+X&W|X|~Z|Y
+X|~Z|Y
+
+
+(X|Y|Z)&(~X&~Y&~Z)|(X|Y|Z)&(~X&~Y&~Z)|(X|Y|Z)&(~X&~Y&~Z)
+
+((~X&~Y&~Z)|(X|Y|Z))&((~X&~Y&~Z)|(X|Y|Z))&((~X&~Y&~Z)|(X|Y|Z))
+
+
+((A&~A)|(A&B))&(~A|~B|C)
+
+
+(A&B)|(A&C)|B|C|(A&X)
+B|C|(A&X)
+.......
+((A&B)|C)|B|C|(A&X)
+
+
+
+
+~~((X|Y|Z)&(~X&~Y&~Z))&A

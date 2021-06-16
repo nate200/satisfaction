@@ -304,7 +304,6 @@ struct CondStack {
                 if (varFound[i] == 1u) // 0|1=1, 2|1=3
                     boolVarIndex[boolIndexLen++] = i;
         }
-        Expression* lastExps = &exps.back();
 
         size_t findValAns[2][26], findValAnsLen[2];
         findValAnsLen[0] = findValAnsLen[1] = boolIndexLen;
@@ -319,6 +318,7 @@ struct CondStack {
         uint32_t ansLenEach[2] = { 0,0 };
         ansLen = 0;
 
+        uint32_t* expResult = &memVal[exps.back().expIndex];
         for (uint32_t prevAnsMem : prev.allAns[prev.condState]) {
 
             FOR(i, prev_boolIndexLen) 
@@ -332,7 +332,7 @@ struct CondStack {
                 for(const Expression &exp : exps)//dereferencing an array of exps is slow, removed by using foreach
                     memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.len, memVal);
 
-                const uint32_t result = memVal[lastExps->expIndex];
+                const uint32_t result = *expResult;
 
                 allAnsTemp[ansLen] = boolmem;
                 allAnsTempResult[ansLen] = result;

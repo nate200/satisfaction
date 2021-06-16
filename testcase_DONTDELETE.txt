@@ -1,0 +1,240 @@
+((~A&B|C)&(~A&b&((~A)&~B&~C))&U)|~B&((~A&B|C)&(~A&~B&((~A)&~B&~C))&U)|~B|((~A&B|C)&(((~A)&~B&~C))&U)|~B|(~(~(((~A&B|C)&(~A&~B&((~A)&~B&~C))&U)|~B)))
+
+((~A&B|C)&(A&B&((A)&B&C))&U)|B
+
+(~(~(((~A&B|C)&(A&B&((A)&B&C))&U)|B)))
+
+if
+A&B&C&D&E&F&G&H&I&J&K&L&M&N&O&P&Q&R&S&T
+then
+
+((~A&B|C)&(D&E&((P)&B&O))&I)|B&((~R&Q|J)&(A&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)&M&C))&G)|B|(~(~(((~A&B|C)&(A&B&((A)&B&C))&F)|N)))
+
+((~A&B|C)&D&E&P&B&O&I)|B&((~R&Q|J)&A&B&A&B&C&H)|K|((~S&T|L)&A&M&C&G)|B|~~(((~A&B|C)&(A&B&(A&B&C))&F)|N)
+
+
+0 0
+0 1
+0 2
+1 1
+
+if (~A|B)&(C|D&~F)|F then
+check
+
+
+________________________________________________________________________________________________________________________________________________________________________________
+
+if A&B&C&D&E&F&G&H&I&J&K&L&M&N&O&P&Q&R&S&T then
+    checkpoint
+else if ~A&~B&~C&~D&~E&~F&~G&~H&~I&~J&~K&~L&~M&~N&~O&~P&~Q&~R&~S&~T then
+    checkpoint
+    fi
+    if A&B&C&D&E&F&G&H&I&J&K&L&M&N&O&P&Q&R&S&T then
+        checkpoint
+    fi
+fi
+
+if
+A&B|C&D&E|F&G&H|I|J&K&L&M|N&O&P|Q&R|S&T
+then
+fi
+
+if A then
+    checkpoint
+    if ~A then
+        checkpoint
+    fi
+else
+    checkpoint
+fi
+if (A&B)|(~A&~B) then
+    checkpoint
+fi
+if A|~A then
+    checkpoint 
+fi
+if B then
+    if ~A then
+        checkpoint
+    fi
+fi
+
+
+if A then
+    checkpoint
+    if ~C|B then
+        checkpoint
+    else
+        checkpoint
+    fi
+else
+    checkpoint
+fi
+
+
+if (~A&B)|(~A&~B) then
+    checkpoint
+    if ~A|C&~B then
+        checkpoint
+        if ~A|~C&B then
+            checkpoint
+    else 
+        checkpoint
+    fi
+else
+    checkpoint
+fi
+
+
+if ~A then
+    checkpoint
+    if B then
+        checkpoint 
+        if A&~B then
+            checkpoint
+        else
+            checkpoint
+        fi
+    fi
+fi
+
+
+
+if (A|~B|C)&(A|B|~C) then
+    checkpoint
+    if ~A|B|~C then
+        checkpoint
+    fi
+    if ~A|~B|C then
+        checkpoint
+    fi
+    if ~(~A|~B|C)&~(~A|B|~C) then
+        checkpoint
+    fi
+    if A&~A then
+        checkpoint
+        if ~A then
+        checkpoint
+        fi
+    fi
+    if ~A then
+        checkpoint
+        if B then
+            checkpoint 
+            if A&~B then
+                checkpoint
+            else
+                checkpoint
+            fi
+        fi
+        if ~B then
+            checkpoint 
+        fi
+    fi
+else
+    if ~A|B|~C then
+        checkpoint
+    fi
+    if ~A|~B|C then
+        checkpoint
+    fi
+    if ~(~A|~B|C)&~(~A|B|~C) then
+        checkpoint
+    fi
+fi
+
+
+if (~A|B)&(C|D&~F)|F then
+    checkpoint
+    if ~A&~B&~C&~D&~F then
+        checkpoint
+
+if ((~A|B)&((C|D)&~F))|F then
+    checkpoint
+    if ~A&~B&~C&~D&~F then
+        checkpoint
+    fi
+fi
+
+_______________________________
+if (~A|B)&(C|D&~F)|F then
+    checkpoint  //(~0|0)&(0|0&1)|0=1&0|0=0...abcdf_can't_reach_inside
+    if ~A&~B&~C&~D&~F then
+        checkpoint //unreachable
+
+
+- push to calStack when meet ')' or '\0'
+- '(' and '&' can create a new stack
+- every stack can NOT HAS '&' or '|' in the same state, but '~' is ok
+- sadly stack=stack can be simplified ex:5=7 --X--> 5
+- buffer save '~' or char before meeting '|','&','('
+
+((~A|B)&((C|D)&~F))|F
+((....)&((...)...)
+01      23
+
+1=~A|B
+3=C|D
+2=3&~F
+0=1&2
+0|F
+
+
+((~A|B&C&D&A|C|D&B&C|F)&((C|D)&~F))|F
+01....2.........3......456....7...
+2=B&C&D&A
+3=D&B&C
+1=~A|2|C|3|F
+6=C|D
+7=6&~F
+5=7 [remove 7]//pset = cset then remove cset
+4=1&5
+0=4 [remove 4]
+0|F
+
+
+((~A|B&C&D&A|C|D&B&C|F)&((C|D)&~F)&((C|D&A)&~F&T)&U)|F
+01....2.........3......456....7...489...a..b.....4....
+2=B&C&D&A
+3=D&B&C
+1=~A|2|C|3|F
+6=C|D
+7=6&~F
+5=7
+10=D&A
+9=C|10
+11=9&~F~T
+8=11
+4=1&5&8&U
+0=4
+0|F
+
+
+((~A&B|C)&(D&E&((P)&B&O))&I)|B&((~R&Q|J)&(A&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)&M&C))&G)|B|(~(~(((~A&B|C)&(A&B&((A)&B&C))&F)|N)))
+01..2....34.5.567..8.8...5....9ab..c....de.f.fgh..i.i...d.....jk..l....mnop..q.....m.....r.s.tuv..w....xy.z.z
+2=~A&B
+1=2|C
+7=P
+8=&7BO
+6=8
+5=&DE6I
+4=5
+12=&~RQ
+11=12|J
+h=A
+i=&hBC
+g=i
+f=&ABg
+e=f
+d=&beH
+l=~S&T
+k=|lL
+p=A
+q=&pMC
+o=q
+n=o
+m=&knG
+w=~A&B
+v=|wC
+...
+
