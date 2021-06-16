@@ -6,7 +6,8 @@
 #define FOR(i, n) for (size_t i = 0u; i < n; i++)
 #define FORS(i, s, n) for (size_t i = s; i < n; i++)
 #define FOR1(i, n) for (size_t i = 1u; i < n; i++)
-#define VALWNEGATE(valMem, i, expVals) valMem[expVals[i] & 0x7FFFFFFFu] ^ (expVals[i] >> 31)//variable with negation
+#define FOR1p(s, e) for (s++; s < e; s++)
+#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFFu] ^ (expVal >> 31)//variable with negation
 /*
     expVals[i], 32th-bit = negation flag, 1st-31th bit = variable/expression
     0x7FFFFFFFu = 0111...1111 is used to remove negation flag
@@ -14,10 +15,10 @@
 
 using namespace std;
 
-uint32_t(*boolOperation[3])(uint32_t*, uint32_t, uint32_t*) = {
-    { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret &= VALWNEGATE(valMem,i,expVals); return ret; } },
-    { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret |= VALWNEGATE(valMem,i,expVals); return ret; } },
-    { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { return VALWNEGATE(valMem,0,expVals); } }
+uint32_t(*boolOperation[3])(uint32_t*, uint32_t*, uint32_t*) = {
+    { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem, *expVals); FOR1p(expVals,expVale) ret &= VALWNEGATE(valMem, *expVals); return ret; } },
+    { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem, *expVals); FOR1p(expVals,expVale) ret |= VALWNEGATE(valMem, *expVals); return ret; } },
+    { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { return VALWNEGATE(valMem, *expVals); } }
 };
 
 enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can't convert enum to int ;(
@@ -334,7 +335,7 @@ struct CondStack {
                     memVal[boolVarIndex[j]] = boolmem >> j & 1u;
 
                 for (const Expression& exp : exps)//dereferencing an array of exps is slow, removed by using foreach
-                    memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.len, memVal);
+                    memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.vals + exp.len, memVal);
 
                 const uint32_t result = *expResult;
 
