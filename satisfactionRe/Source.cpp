@@ -14,6 +14,12 @@
 
 using namespace std;
 
+uint32_t(*boolOperation[3])(uint32_t*, uint32_t, uint32_t*) = {
+    { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret &= VALWNEGATE(valMem,i,expVals); return ret; } },
+    { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret |= VALWNEGATE(valMem,i,expVals); return ret; } },
+    { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { return VALWNEGATE(valMem,0,expVals); } }
+};
+
 enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can't convert enum to int ;(
 struct Expression {//1 boolean operation per 1 expression
     boolOperator oper = boolOperator::NOTHING;
@@ -21,11 +27,13 @@ struct Expression {//1 boolean operation per 1 expression
     size_t expIndex, len = 0, *vals = new size_t[0];//0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
     int lv;//highest lv will be calculated first, children have higher lv than their parent
     //vector<size_t> *valsVector = nullptr;
-    Expression(boolOperator oper, size_t expIndex, int lv, size_t expInfoIndex):
-        oper(oper), expIndex(expIndex), lv(lv), len(expInfoIndex){
+    Expression(boolOperator oper, int lv, size_t expIndex):
+        oper(oper), lv(lv), expIndex(expIndex){
     }
-    void addValsFromExpInfo(vector<size_t> expInfo_vals, size_t* indexMapper) {
+    void addValsFromExpInfo(vector<size_t> &expInfo_vals, size_t expInfo_expIndex, size_t* indexMapper) {
         len = expInfo_vals.size();
+        expIndex = indexMapper[expInfo_expIndex];
+
         vals = new size_t[len];
         size_t* it_val = vals;
 
@@ -177,40 +185,41 @@ static struct ExpressionBuilder {
         if (baseLine->holdingChild != currExp) //fix bug: A&B|C&(Z&X)
             baseLine->holdingChild->addValAny(newNumBoolFound, varFound);
 
-        size_t indexMapper[98];//fix bug: oper::NOTHING messes up all the index in vals
-        {
-            FOR(i, 28u)
-                indexMapper[i] = i;
-            size_t currIndex = 28u;
-            for (const ExpressionInfo& exp_info : expInfos)
-                if (exp_info.oper != boolOperator::NOTHING)
-                    indexMapper[exp_info.expIndex] = currIndex++;
-        }
-
         retExp.reserve(expInfos.size() - 1);
-        walkTreeExp(retExp, expInfos, indexMapper, baseLine->holdingChild, 0);
+        walkTreeExp(retExp, expInfos, baseLine->holdingChild, 0);
         
+        size_t indexMapper[98];
+        FOR(i, 28u) indexMapper[i] = i;
+
         if (retExp.empty()) {//fix bug "if A then" ;(
             currExp = &expInfos.back();
-            retExp.emplace_back(currExp->oper, 28u, 0, 1);
-            retExp[0].addValsFromExpInfo(currExp->vals, indexMapper);
+            //boolOperator oper, int lv, size_t expIndex
+            retExp.emplace_back(currExp->oper, 0, 28u);
+            retExp[0].addValsFromExpInfo(currExp->vals, 28u, indexMapper);
         }
         else {
             sort(retExp.begin(), retExp.end(), sortExpressionInfo());
-            for (Expression& expp : retExp)//sorting messes up all the addresses of vals
-                expp.addValsFromExpInfo(expInfos[expp.len].vals, indexMapper);
+            {
+                size_t currIndex = 28u;
+                for (const Expression& expp : retExp)
+                    indexMapper[expp.expIndex] = currIndex++;
+            }
+            for (Expression& expp : retExp) {//sorting messes up all the addresses of vals
+                currExp = &expInfos[expp.expIndex - 27u];
+                expp.addValsFromExpInfo(currExp->vals, currExp->expIndex, indexMapper);
+            }
         }
     }
-    static void walkTreeExp(vector<Expression>& retExp, vector<ExpressionInfo>& expInfos, size_t *indexMapper, ExpressionInfo * currExp, const int lv) {
-        //boolOperator oper, size_t expIndex, int lv, size_t expInfoIndex
+    static void walkTreeExp(vector<Expression>& retExp, vector<ExpressionInfo>& expInfos, ExpressionInfo * currExp, const int lv) {
+        //boolOperator oper, int lv, size_t expIndex
         if(currExp->oper != boolOperator::NOTHING)
-            retExp.emplace_back(currExp->oper, indexMapper[currExp->expIndex], lv, currExp->expIndex - 27u);
+            retExp.emplace_back(currExp->oper, lv, currExp->expIndex);
 
         const int nextLv = lv + 1;
         for (const size_t val : currExp->vals) {
             size_t index = val & 0x7FFFFFFFu;
             if (index > 27) 
-                walkTreeExp(retExp, expInfos, indexMapper, &expInfos[index - 27u], nextLv);
+                walkTreeExp(retExp, expInfos, &expInfos[index - 27u], nextLv);
         }
     }
     struct sortExpressionInfo {
@@ -251,6 +260,7 @@ static struct ExpressionBuilder {
         currExp = newExp;
     }
 };
+
 struct CondStack {   
     vector<uint32_t> allAns[2];
     //0=else, 1=if; allAns[0].size() + allAns[1].size() <= 2^boolIndexLen
@@ -278,12 +288,6 @@ struct CondStack {
     }
 
     void getStackAns(const char* cond, const CondStack& prev) {
-        uint32_t(*boolOperation[3])(uint32_t*, uint32_t, uint32_t*) = {
-            { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret &= VALWNEGATE(valMem,i,expVals); return ret; } },
-            { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem,0,expVals); FOR1(i,expValslen) ret |= VALWNEGATE(valMem,i,expVals); return ret; } },
-            { [](uint32_t* expVals, uint32_t expValslen, uint32_t* valMem) { return VALWNEGATE(valMem,0,expVals); } }
-        };
-
         const size_t prev_boolIndexLen = prev.boolIndexLen;
 
         size_t allPossBool = 0;
@@ -329,7 +333,7 @@ struct CondStack {
                 FORS(j, prev_boolIndexLen, boolIndexLen)
                     memVal[boolVarIndex[j]] = boolmem >> j & 1u;
 
-                for(const Expression &exp : exps)//dereferencing an array of exps is slow, removed by using foreach
+                for (const Expression& exp : exps)//dereferencing an array of exps is slow, removed by using foreach
                     memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.len, memVal);
 
                 const uint32_t result = *expResult;
