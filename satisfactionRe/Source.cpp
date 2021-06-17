@@ -2,12 +2,13 @@
 #include<stack>
 #include<vector>
 #include<algorithm>
-#include<unordered_map>
+
+#include <time.h>
 #define FOR(i, n) for (size_t i = 0u; i < n; i++)
 #define FORS(i, s, n) for (size_t i = s; i < n; i++)
 #define FOR1(i, n) for (size_t i = 1u; i < n; i++)
 #define FOR1p(s, e) for (s++; s < e; s++)
-#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFFu] ^ (expVal >> 31)//variable with negation
+//#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFFu] ^ (expVal >> 31)//variable with negation
 /*
     expVals[i], 32th-bit = negation flag, 1st-31th bit = variable/expression
     0x7FFFFFFFu = 0111...1111 is used to remove negation flag
@@ -15,11 +16,11 @@
 
 using namespace std;
 
-uint32_t(*boolOperation[3])(uint32_t*, uint32_t*, uint32_t*) = {
+/*uint32_t(*boolOperation[3])(uint32_t*, uint32_t*, uint32_t*) = {
     { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem, *expVals); FOR1p(expVals,expVale) ret &= VALWNEGATE(valMem, *expVals); return ret; } },
     { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem, *expVals); FOR1p(expVals,expVale) ret |= VALWNEGATE(valMem, *expVals); return ret; } },
     { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { return VALWNEGATE(valMem, *expVals); } }
-};
+};*/
 
 enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can't convert enum to int ;(
 struct Expression {//1 boolean operation per 1 expression
@@ -196,6 +197,7 @@ static struct ExpressionBuilder {
             currExp = &expInfos.back();
             //boolOperator oper, int lv, size_t expIndex
             retExp.emplace_back(currExp->oper, 0, 28u);
+            indexMapper[28u] = 28u;
             retExp[0].addValsFromExpInfo(currExp->vals, 28u, indexMapper);
         }
         else {
@@ -334,8 +336,22 @@ struct CondStack {
                 FORS(j, prev_boolIndexLen, boolIndexLen)
                     memVal[boolVarIndex[j]] = boolmem >> j & 1u;
 
-                for (const Expression& exp : exps)//dereferencing an array of exps is slow, removed by using foreach
-                    memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.vals + exp.len, memVal);
+                for (const Expression& exp : exps) {//dereferencing an array of exps is slow, removed by using foreach
+                    //memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.vals + exp.len, memVal);
+                    size_t * expVals = exp.vals, *expVale = exp.vals + exp.len;
+                    uint32_t ret = memVal[expVals[0] & 0x7FFFFFFFu] ^ (expVals[0] >> 31);
+                    switch (exp.oper) {
+                    case boolOperator::AND: 
+                        FOR1p(expVals, expVale) 
+                            ret &= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
+                        break;
+                    case boolOperator::OR: 
+                        FOR1p(expVals, expVale) 
+                            ret |= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
+                        break;
+                    }
+                    memVal[exp.expIndex] = ret;
+                }
 
                 const uint32_t result = *expResult;
 
@@ -412,6 +428,7 @@ int main() {
         IF = 0x69
     };
     while (cin >> inputState) {
+        const clock_t start = clock();
         switch (inputState[0]) {
         case Statement::IF : {//if
             cin >> cond >> then;
@@ -430,6 +447,7 @@ int main() {
             ifs.pop();
             break;
         }
+        cout << clock() - start << "\n";
     }
     return 0;
 }
