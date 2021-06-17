@@ -188,14 +188,18 @@ static struct ExpressionBuilder {
             baseLine->holdingChild->addValAny(newNumBoolFound, varFound);
 
         retExp.reserve(expInfos.size() - 1);
-        walkTreeExp(retExp, expInfos, baseLine->holdingChild, 0);
+        currExp = baseLine->holdingChild;
+
+        if(currExp->valFound.first > 28u && currExp->vals[0] >> 31)//fix bug: ~(A&B)
+            retExp.emplace_back(currExp->oper, 0, currExp->expIndex);
+
+        walkTreeExp(retExp, expInfos, currExp, 0);
         
         size_t indexMapper[98];
         FOR(i, 28u) indexMapper[i] = i;
 
         if (retExp.empty()) {//fix bug "if A then" ;(
             currExp = &expInfos.back();
-            //boolOperator oper, int lv, size_t expIndex
             retExp.emplace_back(currExp->oper, 0, 28u);
             indexMapper[28u] = 28u;
             retExp[0].addValsFromExpInfo(currExp->vals, 28u, indexMapper);
@@ -214,7 +218,6 @@ static struct ExpressionBuilder {
         }
     }
     static void walkTreeExp(vector<Expression>& retExp, vector<ExpressionInfo>& expInfos, ExpressionInfo * currExp, const int lv) {
-        //boolOperator oper, int lv, size_t expIndex
         if(currExp->oper != boolOperator::NOTHING)
             retExp.emplace_back(currExp->oper, lv, currExp->expIndex);
 
@@ -336,7 +339,6 @@ struct CondStack {
                 FORS(j, prev_boolIndexLen, boolIndexLen)
                     memVal[boolVarIndex[j]] = boolmem >> j & 1u;
 
-                uint32_t* expResult = &memVal[28u];
                 for (const Expression& exp : exps) {//dereferencing an array of exps is slow, removed by using foreach
                     //memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.vals + exp.len, memVal);
                     size_t * expVals = exp.vals, *expVale = exp.vals + exp.len;
@@ -351,8 +353,7 @@ struct CondStack {
                             ret |= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
                         break;
                     }
-                    *expResult = ret;
-                    expResult++;
+                    memVal[exp.expIndex] = ret;
                 }
 
                 const uint32_t result = *lastExpResult;
@@ -405,14 +406,7 @@ struct CondStack {
 
 };
 
-/*void sss(Expression *&aa) {
-    cout << aa << " " << &*aa << "\n";
-}*/
 int main() {
-    /*size_t valss[1];
-    Expression aa(boolOperator::NOTHING,0,0, 0, valss);
-    cout << &aa << "\n";
-    return 0;*/
 
     ios::sync_with_stdio(false);
     cin.tie(NULL);
@@ -430,11 +424,12 @@ int main() {
         IF = 0x69
     };
     while (cin >> inputState) {
-        const clock_t start = clock();
         switch (inputState[0]) {
         case Statement::IF : {//if
             cin >> cond >> then;
+            const clock_t start = clock();
             ifs.emplace(cond, ifs.top());
+            cout << clock() - start << "\n";
             break;
         }
         case  Statement::ELSE : {//else
@@ -449,7 +444,6 @@ int main() {
             ifs.pop();
             break;
         }
-        cout << clock() - start << "\n";
     }
     return 0;
 }
