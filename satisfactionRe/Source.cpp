@@ -50,7 +50,7 @@ struct Expression {//1 boolean operation per 1 expression
     }
     ~Expression() { delete[] vals; /*delete valsVector;*/ }
 };
-static struct ExpressionBuilder {
+struct ExpressionBuilder {
     ExpressionBuilder() { throw ""; }
 
     struct ExpressionInfo {//1 boolean operation per 1 expression
@@ -319,7 +319,7 @@ struct CondStack {
         findValAnsLen[0] = findValAnsLen[1] = boolIndexLen;
         FOR(i, boolIndexLen) findValAns[0][i] = findValAns[1][i] = boolVarIndex[i];
 
-        size_t memVal[75];//array index: [0-25=A-Z], [26=false], [27=true], [28-74=Exps]
+        uint32_t memVal[75];//array index: [0-25=A-Z], [26=false], [27=true], [28-74=Exps]
         memVal[26] = 0u; memVal[27] = 1u;
 
         //added to prevent vector reallocation
