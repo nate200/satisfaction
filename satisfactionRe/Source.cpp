@@ -26,7 +26,7 @@ enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can'
 struct Expression {//1 boolean operation per 1 expression
     boolOperator oper = boolOperator::NOTHING;
 
-    size_t expIndex, len = 0, *vals = new size_t[0];//0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
+    size_t expIndex, len = 0, *vals = NULL;//0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
     int lv;//highest lv will be calculated first, children have higher lv than their parent
     //vector<size_t> *valsVector = nullptr;
     Expression(boolOperator oper, int lv, size_t expIndex):
@@ -48,7 +48,7 @@ struct Expression {//1 boolean operation per 1 expression
             it_val++;
         }
     }
-    ~Expression() { delete[] vals; /*delete valsVector;*/ }
+    ~Expression() { if(vals) delete[] vals; /*delete valsVector;*/ }
 };
 struct ExpressionBuilder {
     ExpressionBuilder() { throw ""; }
