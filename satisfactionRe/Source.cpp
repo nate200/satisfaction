@@ -107,6 +107,10 @@ struct ExpressionBuilder {
             for (const size_t val : exp->vals)
                 vals.push_back(val | fn);
         }
+        void flipEq() {
+            oper = boolOperator(oper ^ 1);
+            FOR(i, vals.size()) vals[i] ^= 0x80000000;
+        }
         ~ExpressionInfo() { }
     };
 
@@ -190,8 +194,11 @@ struct ExpressionBuilder {
         retExp.reserve(expInfos.size() - 1);
         currExp = baseLine->holdingChild;
 
-        if(currExp->valFound.first > 28u && currExp->vals[0] >> 31)//fix bug: ~(A&B)
-            retExp.emplace_back(currExp->oper, 0, currExp->expIndex);
+        if (currExp->oper == boolOperator::NOTHING) {//fix bug: ~(A&B)
+            const size_t val = currExp->vals[0], index = currExp->vals[0] & 0x7FFFFFFF;
+            if (index > 27 && (val >> 31)) 
+                expInfos[index - 27u].flipEq();
+        }
 
         walkTreeExp(retExp, expInfos, currExp, 0);
         
@@ -199,7 +206,7 @@ struct ExpressionBuilder {
         FOR(i, 28u) indexMapper[i] = i;
 
         if (retExp.empty()) {//fix bug "if A then" ;(
-            currExp = &expInfos.back();
+            currExp = baseLine->holdingChild;
             retExp.emplace_back(currExp->oper, 0, 28u);
             indexMapper[28u] = 28u;
             retExp[0].addValsFromExpInfo(currExp->vals, 28u, indexMapper);
@@ -285,7 +292,7 @@ struct CondStack {
     }
 
     CondStack(const char* cond, const CondStack &prev){
-        if (prev.finalAns[condState][0] == -2) {//unreachable
+        if (prev.finalAns[prev.condState][0] == -2) {//unreachable, fix bug change condState to prev.condState
             finalAns[0][0] = finalAns[1][0] = -2;
             return;
         }
@@ -376,7 +383,8 @@ struct CondStack {
         }
         allAns[0].reserve(ansLenEach[0]);
         allAns[1].reserve(ansLenEach[1]);
-        FOR(i, ansLen) allAns[allAnsTempResult[i]].push_back(allAnsTemp[i]);
+        FOR(i, ansLen) 
+            allAns[allAnsTempResult[i]].push_back(allAnsTemp[i]);
 
         if (ansLenEach[0] == 0)finalAns[0][0] = -2;
         else if (ansLenEach[1] == 0)finalAns[1][0] = -2;
@@ -387,6 +395,7 @@ struct CondStack {
     void switchToElse() {
         condState = 0;
         allAns[1].clear();
+        allAns[1].reserve(0);
     }
 
     void checkpoint() {  
@@ -427,9 +436,9 @@ int main() {
         switch (inputState[0]) {
         case Statement::IF : {//if
             cin >> cond >> then;
-            const clock_t start = clock();
+            //const clock_t start = clock();
             ifs.emplace(cond, ifs.top());
-            cout << clock() - start << "\n";
+            //cout << clock() - start << "\n";
             break;
         }
         case  Statement::ELSE : {//else

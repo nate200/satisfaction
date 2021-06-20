@@ -238,3 +238,83 @@ w=~A&B
 v=|wC
 ...
 
+
+ABCDEFGHIJKLMNOPQRST
+
+if ((~A&B|C)&(D&E&((P)&M&O))&I)|B&((~R&Q|J)&(T&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)&M&C))&G)|B|(~(~(((~A&B|C)&(A&B&((A)&B&C))&F)|N))) then
+    checkpoint
+    if ~~(~(((~A|L&Q|C|D&C|F)&((C|D)&~F)&((C|D&A)&T)&G)|F)&~(J|((~A|B)&((C|D)&~F))&K)|~(B&E|~(F)&(~A&B)|(A&~B))|B&A&~((~(C|A&K)))|~(H)) then
+        checkpoint
+    else 
+        checkpoint
+        if ~~~~~~~~~~(((~(((~~((((~(S)))&H)&E)|N)&T)|A)&I))&~~~K) then 
+            checkpoint
+            if ~(T&((~N&(((G|~(K&E))))&F)|G))&H|(R|Q&S|((~(T&((((E))))&K|I&J)))|~L) then 
+                checkpoint
+                if L|((K|(~(J&~T|~D))|~R)|~((J&K|L)&~((G&H|~F|E))&~R)|((Q&~D|E)|~(K&O|J)&~(C&M(~Q&A))|~~~L)|(~A|F|~C|~Q)|(~H))&~(E&(N|~(~T)|(~Q))) then 
+                    checkpoint
+                else 
+                    checkpoint
+                    if A&B&C|(K|(~(J&~T|~D)&(C&M(~Q&A)))|(C|D&A)&T) then 
+                        checkpoint
+                    else 
+                        checkpoint
+                    fi
+                fi
+            else 
+                checkpoint
+                if (~B&A|((~(~~R))|T&C&~A))&(~T&(~~C|I|J&A|D)&(N|~~K&(L&B&(~F|~A&~G))|Q|~P))&((~(~(O&M|~D&M))|~E)|(~J&~H&A))&~(~S|S)&((R&A|~I)|~S) then 
+                    checkpoint
+                else
+                    checkpoint
+                    if ~B&A|((~(~~B))|T&C&~A)&((~T&(~~C|A|J&A|D)&(N|~~K&(L&B&(~F|~A&~G))|F|~P))&(~(~(O&M|~D&M))|~E)|(~J&~H&A))&~(~(R&A|~I|~Q&A&~E)|~S) then 
+                        checkpoint
+                    else 
+                        checkpoint
+                    fi
+                fi
+            fi
+        else 
+            checkpoint
+            if R|G&M&N&L&O&~~~~~(~((~(((~~((((L))&K)))|E))))&I)|N then 
+                checkpoint
+                if ~G|(~(H&~M))|~K then
+                    checkpoint
+                else 
+                    checkpoint
+                fi
+            else
+                checkpoint
+            fi
+        else if A&B|C&D&E|F&G&H|I|J&K&L&M|N&O&P|Q&R|S&T then 
+            checkpoint
+        else checkpoint
+        fi fi fi fi
+else if  then checkpoint
+else if  then checkpoint
+else checkpoint
+fi fi fi fi
+
+
+
+
+
+if A then checkpoint fi
+if B then checkpoint fi
+if C then checkpoint fi
+if D then checkpoint fi
+if F then checkpoint fi
+if G then checkpoint fi
+if H then checkpoint fi
+if I then checkpoint fi
+if J then checkpoint fi
+if K then checkpoint fi
+if L then checkpoint fi
+if M then checkpoint fi
+if N then checkpoint fi
+if O then checkpoint fi
+if P then checkpoint fi
+if Q then checkpoint fi
+if R then checkpoint fi
+if S then checkpoint fi
+if T then checkpoint fi
