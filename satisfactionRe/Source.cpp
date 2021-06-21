@@ -402,7 +402,7 @@ struct CondStack {
         cout << '>';
         if (finalAns[condState][0] == -2)cout << "unreachable";
         else {
-            FOR(i, boolIndexLen)
+            FOR(i, 26u)//fix bug : change from boolIndexLen to 26u. wtf is wrong with me
                 if (-1 < finalAns[condState][i])
                     cout << (char)((i + 65) + (32 * !finalAns[condState][i]));//upper = true, lower = false
         }

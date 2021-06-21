@@ -245,6 +245,135 @@ if ((~A&B|C)&(D&E&((P)&M&O))&I)|B&((~R&Q|J)&(T&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)
     checkpoint
     if ~~(~(((~A|L&Q|C|D&C|F)&((C|D)&~F)&((C|D&A)&T)&G)|F)&~(J|((~A|B)&((C|D)&~F))&K)|~(B&E|~(F)&(~A&B)|(A&~B))|B&A&~((~(C|A&K)))|~(H)) then
         checkpoint
+        if (F&~(H|I|~L)&((~(C&L)|((K&~H|P)|(~O|S&R))&~P)|(~(D)))|B)&~(A|C|~P)&~((G&I&~N)|~(M&Q|R&~(P|T)|S)) then 
+            checkpoint
+            if (A|B)|P&~(C&~R|K)|(N&O&P|Q&R|S&T)&M|(Q&(~D|(~(~(K))|C)))&H|~(~R)|J then
+                checkpoint
+                if R|Q|~S&T|G|(M&N&P)|Q then 
+                    checkpoint
+                    if (E&(N|~(~T)|(~Q)))&(~((L))&K)&F&G&H then 
+                    else
+                        checkpoint
+                        if G|M&~~~(H&F|~N)&((J|~~~H)&~(K|L&(C&~R)|A)&(~S|K))|~~~(G&~~(C&K|I&J|~D)|J&~E|B)|~~((P|R)|~(~H&~R)&~(E|C&~K)) then 
+                            checkpoint
+                        else
+                            checkpoint
+                        fi
+                    fi
+                else 
+                    checkpoint
+                    if (E&(N|~(~T&I)|(~Q)))&((~S&T|L)&(((A)&M&C))&G)|B|(~(~(((~A&B|C)&(A&B&((A)&B&C))&F)|N))) then
+                        checkpoint
+                    else
+                        checkpoint
+                    fi
+                fi
+                if Q&F|(D|K)&((P&~H)|(~(~A&(~B|C|D|E|F|G)))&J)&(F|L&~G)&(A&~(~(J&I|G&~N)&((~C|Q&R)&~S)|~~(~P)&C))|~L then 
+                    checkpoint
+                else 
+                    checkpoint
+                fi
+                if E&K|~C&~B|F&~(H&(E|N&~T)|~(A&I)&O|K) then 
+                    checkpoint
+                    if ~(G&M&N&L&O)|~E|H then 
+                        checkpoint
+                    else 
+                        checkpoint
+                    fi
+                else 
+                    checkpoint
+                    if (~T&(~~C|I|J&A|D)&(N|~~K&(L&B&(~F|~A&~G))|Q|~P)) then 
+                        checkpoint
+                    else 
+                        checkpoint
+                    fi
+                fi
+            else
+                checkpoint
+                if ((~A|B&M&D&P|C|D&B&C|F)&((C|D)&~F)&((C|D&A)&~F&T)&P)|F then
+                    checkpoint
+                    if M&C|~(~(D&H|~H))&~~(~((~T&((~A)|C)))|~F)&~(T&~P|D)|N then 
+                        checkpoint
+                    else 
+                        checkpoint
+                    fi
+                else 
+                    checkpoint
+                    if ~((G&H&~D)|(A&B&I)|~(A&~G&~O&~K)) then 
+                        checkpoint
+                    else 
+                        checkpoint
+                    fi
+                fi
+                if ((~S|T|L)&(~S|C|~A)|(L&((A)&~C))&G) then 
+                    checkpoint
+                else 
+                    checkpoint
+                fi
+            fi
+        else
+            checkpoint
+            if (~B&A|((~(~~R))|T&C&~A))&(~T&(~~C|I|J&A|D)&(N|~~K&(L&B&(~F|~A&~G))|Q|~P))&((~(~(O&M|~D&M))|~E)|(~J&~H&A))&~(~S|S)&((R&A|~I)|~S) then 
+                checkpoint
+                if A&B&C&D&E&F&G&H&I&J&K&L&M&N&O&P&Q&R&S&T then 
+                    checkpoint
+                else 
+                    checkpoint 
+                fi
+            else 
+                checkpoint
+                if Q&F|(D|K)&((P&~H)|(~(~A&(~B|C|D|E|F|G)))&J)&(F|L&~G)&(A&~(~(J&I|G&~N)&((~C|Q&R)&~S)|~~(~P)&C))|~L then 
+                    checkpoint
+                    if (~A&B|C)&D&E&P&B&O&I|B&(~R&Q|J)&A&B&A&B&C&H|K|((~S&T|L)&A&M&C&G)|B|~~((~A&B|C)&A&B&A&B&C&F|N) then
+                        checkpoint
+                        if ~(P&L|P|~S&(I)&D|~G&(H&J)|~I&L&K|G|(T&H&(G|C)&A)&D|~B&C&M|~~~N&K|~O) then 
+                            checkpoint
+                        else
+                            checkpoint
+                        fi
+                    else 
+                        checkpoint 
+                    fi
+                    if ~(P&L|P|~S&(I)&D|~G&(H&J)|~I&L&K|G|(T&H&(O&~I)&A)&D|~B&C&M|~~~N&K|~O) then 
+                        checkpoint
+                        if (~A&B|C)&D&E&P&B&O&I|B&(~R&Q|J)&A&B&A&B&C&H|K|((~S&T|L)&A&M&C&G)|B|~~((~A&B|C)&A&B&A&B&C&F|N) then
+                            checkpoint
+                        else 
+                            checkpoint 
+                        fi
+                    else 
+                        checkpoint
+                        if (~T&(~~C|I|J&A|D)&(N|~~K&(L&B&(~F|~A&~G))|Q|~P)) then 
+                            checkpoint
+                            if (E&(N|~(~T)|(~Q)))&(~((L))&K)&F&G&H then
+                                checkpoint
+                            else 
+                                checkpoint
+                            fi
+                        else 
+                            checkpoint
+                        fi
+                    fi
+                else 
+                    checkpoint
+                fi
+            fi
+            if ~~(~(P|G)&(P|(D&(O|~((~(F|~~~M&~((F|~~A)&H|((~(T&L&))))))))))) then 
+                checkpoint
+                if E&~~~~I&~~~(((C|~E&~L|~((H&J|~H|(P&~~~(~M|P|G&~~(~H|P&(~H)&~(O|~H)|(((~(A|O&(F|L)&O|A&P|~~)))))))))))) then 
+                    checkpoint
+                else 
+                    checkpoint
+                fi
+            else 
+                checkpoint
+                if E&J|F&H&~B&(O|((L|P&~~J|K|(D&~(E|~L|F&~~~(~B&~~(J)|P&~~~(~~((F)|(~J|))))))))) then 
+                    checkpoint
+                else 
+                    checkpoint
+                fi
+            fi
+        fi
     else 
         checkpoint
         if ~~~~~~~~~~(((~(((~~((((~(S)))&H)&E)|N)&T)|A)&I))&~~~K) then 
@@ -259,6 +388,11 @@ if ((~A&B|C)&(D&E&((P)&M&O))&I)|B&((~R&Q|J)&(T&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)
                         checkpoint
                     else 
                         checkpoint
+                        if ~O&M&(C&K|C&~(D&(L))&(~~K&~(H|N|D)&~N&C&D)&~(G)&((B)|(O|D&N|D|E|L&P|K&~(M&O)|C)&((I|(~C)|(I)|N&~(~~P&I|~G&~Q))))) then 
+                            checkpoint
+                        else
+                            checkpoint
+                        fi
                     fi
                 fi
             else 
@@ -286,14 +420,161 @@ if ((~A&B|C)&(D&E&((P)&M&O))&I)|B&((~R&Q|J)&(T&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)
             else
                 checkpoint
             fi
-        else if A&B|C&D&E|F&G&H|I|J&K&L&M|N&O&P|Q&R|S&T then 
+        fi
+        if A&B|C&D&E|F&G&H|I|J&K&L&M|N&O&P|Q&R|S&T then 
             checkpoint
-        else checkpoint
-        fi fi fi fi
-else if  then checkpoint
-else if  then checkpoint
-else checkpoint
-fi fi fi fi
+            if (F&~(H|I|~L)&((~(C&L)|((K&~H|P)|(~O|S&R))&~P)|(~(D)))|B)&~(A|C|~P)&~((G&I&~N)|~(M&Q|R&~(P|T)|S)) then 
+                checkpoint
+            else 
+                checkpoint
+            fi 
+        else 
+            checkpoint
+        fi 
+    fi 
+else 
+    checkpoint
+    if (F&~(H|I|~L)&((~(C&L)|((K&~H|P)|(~O|S&R))&~P)|(~(D)))|B)&~(A|C|~P)&~((G&I&~N)|~(M&Q|R&~(P|T)|S)) then 
+        checkpoint
+        if (E&(N|~(~T&I)|(~Q)))&((~S&T|L)&(((A)&M&C))&G)|B|(~(~(((~A&B|C)&(A&B&((A)&B&C))&F)|N))) then
+            checkpoint
+            if R|Q|~S&T|G|(M&N&P)|Q then
+                checkpoint
+                if E&C&~B|B&(K&M|~~G|~N|G&(H&~O&~~K|C)|N|~~P)|M|C&(F&(O&G&K&~((N&(~((A&J&(B&~G&~~J|A|~B&~O)|G&~M&D|G&((F))))))))) then
+                    checkpoint
+                    if (~A&B|C)&D&E&P&B&O&I|B&(~R&Q|J)&A&B&A&B&C&H|K|((~S&T|L)&A&M&C&G)|B|~~((~A&B|C)&A&B&A&B&C&F|N) then
+                        checkpoint
+                    else
+                        checkpoint
+                    fi
+                else
+                    checkpoint
+                    if A&B&C|(K|(~(J&~T|~D)&(C&M(~Q&A)))|(C|D&A)&T) then
+                        checkpoint
+                        if M|(~A&L&~L&F|~B|J|(~~G)|~J&C|~C|~L&~~((N&(((N&~~~I)))))) then
+                            checkpoint
+                        else
+                            checkpoint
+                        fi
+                    else
+                        checkpoint
+                        if C&J&F|K|C&B&~~E|G&F|J|C&~~B|~(~A|J|D)&D&~I|(~~(~(~~H|A&J&~((G&P|~(A|M|~~~~B|(~J|K)|~~P)|(L|(~(J)))))))) then
+                            checkpoint
+                        else
+                            checkpoint
+                        fi
+                    fi
+                    if G|M&~~~(H&F|~N)&((J|~~~H)&~(K|L&(C&~R)|A)&(~S|K))|~~~(G&~~(C&K|I&J|~D)|J&~E|B)|~~((P|R)|~(~H&~R)&~(E|C&~K)) then
+                        checkpoint
+                    else
+                        checkpoint
+                    fi
+                fi
+                if B|~A&(~~H&K|G&(D&(~P|I&O)|~~~(~A)|~A)&~~E&~(P&~F)) then
+                    checkpoint
+                else
+                    checkpoint
+                fi
+                if L&F|(~N)|I&P&(~(H|(F|~B|A)&~~~~A|J|G)|~H)&D&L&P&J&B&O|~M&I&~~(((L&~(~F&O&D&K)|((D|B&~F|~L|C|B&~(M|(~(K)))))))) then
+                    checkpoint
+                else
+                    checkpoint
+                fi
+            else
+                checkpoint
+                if ~~K&~~N&I|~~I|~E&N&E&~C|F|((~L&M&((~H|(((N|G|K)&~(O&~L|~(M&(I|~~A&P))&I&~~M)|(~~I|~~J&~~(~~D)))))))) then
+                    checkpoint
+                else
+                    checkpoint
+                fi
+            fi
+        else
+            checkpoint
+        fi
+        if ~((G&H&~D)|(A&B&I)|~(A&~G&~O&~K)) then
+            checkpoint
+        else
+            checkpoint
+        fi
+    else 
+        checkpoint
+        if ((~A|B&M&D&P|C|D&B&C|F)&((C|D)&~F)&((C|D&A)&~F&T)&P)|F then 
+            checkpoint
+        else 
+            checkpoint
+        fi 
+    fi 
+fi
+if (F&~(H|I|~L)&((~(C&L)|((K&~H|P)|(~O|S&R))&~P)|(~(D)))|B)&~(A|C|~P)&~((G&I&~N)|~(M&Q|R&~(P|T)|S)) then 
+    checkpoint
+    if (E&(N|~(~T&I)|(~Q)))&((~S&T|L)&(((A)&M&C))&G)|B|(~(~(((~A&B|C)&(A&B&((A)&B&C))&F)|N))) then
+        checkpoint
+        if R|Q|~S&T|G|(M&N&P)|Q then
+            checkpoint
+            if E&C&~B|B&(K&M|~~G|~N|G&(H&~O&~~K|C)|N|~~P)|M|C&(F&(O&G&K&~((N&(~((A&J&(B&~G&~~J|A|~B&~O)|G&~M&D|G&((F))))))))) then
+                checkpoint
+                if (~A&B|C)&D&E&P&B&O&I|B&(~R&Q|J)&A&B&A&B&C&H|K|((~S&T|L)&A&M&C&G)|B|~~((~A&B|C)&A&B&A&B&C&F|N) then
+                    checkpoint
+                else
+                    checkpoint
+                fi
+            else
+                checkpoint
+                if A&B&C|(K|(~(J&~T|~D)&(C&M(~Q&A)))|(C|D&A)&T) then
+                    checkpoint
+                    if M|(~A&L&~L&F|~B|J|(~~G)|~J&C|~C|~L&~~((N&(((N&~~~I)))))) then
+                        checkpoint
+                    else
+                        checkpoint
+                    fi
+                else
+                    checkpoint
+                    if C&J&F|K|C&B&~~E|G&F|J|C&~~B|~(~A|J|D)&D&~I|(~~(~(~~H|A&J&~((G&P|~(A|M|~~~~B|(~J|K)|~~P)|(L|(~(J)))))))) then
+                        checkpoint
+                    else
+                        checkpoint
+                    fi
+                fi
+                if G|M&~~~(H&F|~N)&((J|~~~H)&~(K|L&(C&~R)|A)&(~S|K))|~~~(G&~~(C&K|I&J|~D)|J&~E|B)|~~((P|R)|~(~H&~R)&~(E|C&~K)) then
+                    checkpoint
+                else
+                    checkpoint
+                fi
+            fi
+            if B|~A&(~~H&K|G&(D&(~P|I&O)|~~~(~A)|~A)&~~E&~(P&~F)) then
+                checkpoint
+            else
+                checkpoint
+            fi
+            if L&F|(~N)|I&P&(~(H|(F|~B|A)&~~~~A|J|G)|~H)&D&L&P&J&B&O|~M&I&~~(((L&~(~F&O&D&K)|((D|B&~F|~L|C|B&~(M|(~(K)))))))) then
+                checkpoint
+            else
+                checkpoint
+            fi
+        else
+            checkpoint
+            if ~~K&~~N&I|~~I|~E&N&E&~C|F|((~L&M&((~H|(((N|G|K)&~(O&~L|~(M&(I|~~A&P))&I&~~M)|(~~I|~~J&~~(~~D)))))))) then
+                checkpoint
+            else
+                checkpoint
+            fi
+        fi
+    else
+        checkpoint
+    fi
+    if ~((G&H&~D)|(A&B&I)|~(A&~G&~O&~K)) then
+        checkpoint
+    else
+        checkpoint
+    fi
+else 
+    checkpoint
+    if ((~A|B&M&D&P|C|D&B&C|F)&((C|D)&~F)&((C|D&A)&~F&T)&P)|F then 
+        checkpoint
+    else 
+        checkpoint
+    fi 
+fi 
 
 
 
@@ -318,3 +599,11 @@ if Q then checkpoint fi
 if R then checkpoint fi
 if S then checkpoint fi
 if T then checkpoint fi
+
+
+
+E&~~~~I&~~~(((C|~E&~L|~((H&J|~H|(P&~~~(~M|P|G&~~(~H|P&(~H)&~(O|~H)|(((~(A|O&(F|L)&O|A&P|~~))))))))))))
+E&J|F&H&~B&(O|((L|P&~~J|K|(D&~(E|~L|F&~~~(~B&~~(J)|P&~~~(~~((F)|(~J|)))))))))
+
+
+~~(~(P|G)&(P|(D&(O|~((~(F|~~~M&~((F|~~A)&H|((~(T&L&)))))))))))
