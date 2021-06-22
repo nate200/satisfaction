@@ -8,10 +8,11 @@
 #define FORS(i, s, n) for (size_t i = s; i < n; i++)
 #define FOR1(i, n) for (size_t i = 1u; i < n; i++)
 #define FOR1p(s, e) for (s++; s < e; s++)
-//#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFFu] ^ (expVal >> 31)//variable with negation
+#define FORp(s, e) for (; s < e; s++)
+//#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFF] ^ (expVal >> 31)//variable with negation
 /*
     expVals[i], 32th-bit = negation flag, 1st-31th bit = variable/expression
-    0x7FFFFFFFu = 0111...1111 is used to remove negation flag
+    0x7FFFFFFF = 0111...1111 is used to remove negation flag
 */
 
 using namespace std;
@@ -43,7 +44,7 @@ struct Expression {//1 boolean operation per 1 expression
         //valsVector->reserve(len);
 
         for (const size_t val : expInfo_vals) {
-            *it_val = indexMapper[val & 0x7FFFFFFFu] | val & 0x80000000;
+            *it_val = indexMapper[val & 0x7FFFFFFF] | val & 0x80000000;
             //valsVector->push_back(*it_val);
             it_val++;
         }
@@ -58,6 +59,7 @@ struct ExpressionBuilder {
 
         size_t expIndex;
         vector<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
+
         int lv;//highest lv will be calculated first, children have higher lv than their parent
 
         pair<char, int> valFound;
@@ -230,7 +232,7 @@ struct ExpressionBuilder {
 
         const int nextLv = lv + 1;
         for (const size_t val : currExp->vals) {
-            size_t index = val & 0x7FFFFFFFu;
+            size_t index = val & 0x7FFFFFFF;
             if (index > 27) 
                 walkTreeExp(retExp, expInfos, &expInfos[index - 27u], nextLv);
         }
@@ -275,7 +277,9 @@ struct ExpressionBuilder {
 };
 
 struct CondStack {   
-    vector<uint32_t> allAns[2];
+    int dontDeletePlz = 0;
+    uint32_t* allAns[2] = {NULL,NULL};
+    uint32_t allAnsLen[2];
     //0=else, 1=if; allAns[0].size() + allAns[1].size() <= 2^boolIndexLen
     //new variables fill up from right to left
 
@@ -286,9 +290,14 @@ struct CondStack {
     int finalAns[2][26];//2nd dimension for if-else, ordering is the same as boolVarIndex[26], 0=[val must be false], 1=[val must be true], -1 = both, -2 = unreachable, -3=unknown
 
     CondStack() {//for static CondStack _dummy_stack;
+        dontDeletePlz = 1;
         FOR(i, 26u) finalAns[0][i] = finalAns[1][i] = -3;
-        allAns[0].push_back(0);
-        allAns[1].push_back(0);
+        allAns[0] = new uint32_t[1];
+        allAns[0][0] = 0; 
+        allAnsLen[0] = 1;
+        allAns[1] = new uint32_t[1];
+        allAns[1][0] = 0;
+        allAnsLen[1] = 1;
     }
 
     CondStack(const char* cond, const CondStack &prev){
@@ -330,34 +339,35 @@ struct CondStack {
         memVal[26] = 0u; memVal[27] = 1u;
 
         //added to prevent vector reallocation
-        uint32_t ansLen = prev.allAns[prev.condState].size() * allPossBool;
+        uint32_t ansLen = prev.allAnsLen[prev.condState] * allPossBool;
         uint32_t* allAnsTemp = new uint32_t[ansLen], *allAnsTempResult = new uint32_t[ansLen];
         uint32_t ansLenEach[2] = { 0,0 };
         ansLen = 0;
 
         uint32_t* lastExpResult = &memVal[28u + exps.size() - 1];
-        for (uint32_t prevAnsMem : prev.allAns[prev.condState]) {
+        uint32_t* endPrevAnsMem = prev.allAns[prev.condState] + prev.allAnsLen[prev.condState];
+        for (uint32_t* prevAnsMem = prev.allAns[prev.condState]; prevAnsMem < endPrevAnsMem; prevAnsMem++) {
 
             FOR(i, prev_boolIndexLen) 
-                memVal[boolVarIndex[i]] = prevAnsMem >> i & 1u;
+                memVal[boolVarIndex[i]] = *prevAnsMem >> i & 1u;
 
             FOR(i, allPossBool) {
-                uint32_t boolmem = prevAnsMem | i << prev_boolIndexLen;
+                uint32_t boolmem = *prevAnsMem | i << prev_boolIndexLen;
                 FORS(j, prev_boolIndexLen, boolIndexLen)
                     memVal[boolVarIndex[j]] = boolmem >> j & 1u;
 
                 for (const Expression& exp : exps) {//dereferencing an array of exps is slow, removed by using foreach
                     //memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.vals + exp.len, memVal);
                     size_t * expVals = exp.vals, *expVale = exp.vals + exp.len;
-                    uint32_t ret = memVal[expVals[0] & 0x7FFFFFFFu] ^ (expVals[0] >> 31);
+                    uint32_t ret = memVal[expVals[0] & 0x7FFFFFFF] ^ (expVals[0] >> 31);
                     switch (exp.oper) {
                     case boolOperator::AND: 
                         FOR1p(expVals, expVale) 
-                            ret &= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
+                            ret &= memVal[*expVals & 0x7FFFFFFF] ^ (*expVals >> 31);
                         break;
                     case boolOperator::OR: 
                         FOR1p(expVals, expVale) 
-                            ret |= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
+                            ret |= memVal[*expVals & 0x7FFFFFFF] ^ (*expVals >> 31);
                         break;
                     }
                     memVal[exp.expIndex] = ret;
@@ -381,10 +391,14 @@ struct CondStack {
                 }
             }
         }
-        allAns[0].reserve(ansLenEach[0]);
-        allAns[1].reserve(ansLenEach[1]);
-        FOR(i, ansLen) 
-            allAns[allAnsTempResult[i]].push_back(allAnsTemp[i]);
+        allAnsLen[0] = 0; allAnsLen[1] = 0;
+        allAns[0] = new uint32_t[ansLenEach[0]];
+        allAns[1] = new uint32_t[ansLenEach[1]];
+        FOR(i, ansLen) {
+            uint32_t result = allAnsTempResult[i];
+            allAns[result][allAnsLen[result]] = allAnsTemp[i];
+            allAnsLen[result]++;
+        }
 
         if (ansLenEach[0] == 0)finalAns[0][0] = -2;
         else if (ansLenEach[1] == 0)finalAns[1][0] = -2;
@@ -394,8 +408,10 @@ struct CondStack {
 
     void switchToElse() {
         condState = 0;
-        allAns[1].clear();
-        allAns[1].reserve(0);
+        if (allAns[1] != NULL) { 
+            delete[] allAns[1]; 
+            allAns[1] = NULL; allAnsLen[1] = 0;
+        }
     }
 
     void checkpoint() {  
@@ -410,7 +426,9 @@ struct CondStack {
     }
 
     ~CondStack() {
-        allAns[0].clear(); allAns[1].clear();
+        if (dontDeletePlz)return;
+        if (allAnsLen[0]) delete[] allAns[0];
+        if (allAnsLen[1]) delete[] allAns[1];
     }
 
 };
