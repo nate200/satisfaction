@@ -13,7 +13,7 @@ if ~~(~I&A&(((~~(I&~~I|~~~(O&R)&A|(~P|~A|~Z&~~~G|~R|~I&L|~P&G)|S|Z))))&(X&~(((G)
                 fi
                 if ~(~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
                     checkpoint
-                    if ~O&(L|~S&~(~~M)&~M))&U&N|M|~~(~((~~A|~T|P|~~Z)&(Q|K))|P|~((U&Z))) then
+                    if ~O&(L|~S&~(~~M)&~M)&U&N|M|~~(~((~~A|~T|P|~~Z)&(Q|K))|P|~((U&Z))) then
                         checkpoint
                     else
                         checkpoint
