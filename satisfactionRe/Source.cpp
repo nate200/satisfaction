@@ -1,6 +1,7 @@
 #include<iostream>
 #include<stack>
 #include<vector>
+#include<unordered_set>
 #include<algorithm>
 
 #include <time.h>
@@ -32,7 +33,7 @@ struct Expression {//1 boolean operation per 1 expression
     Expression(boolOperator oper, int lv, size_t expIndex):
         oper(oper), lv(lv), expIndex(expIndex){
     }
-    void addValsFromExpInfo(vector<size_t> &expInfo_vals, size_t expInfo_expIndex, size_t* indexMapper) {
+    void addValsFromExpInfo(unordered_set<size_t> &expInfo_vals, size_t expInfo_expIndex, size_t* indexMapper) {
         len = expInfo_vals.size();
         expIndex = indexMapper[expInfo_expIndex];
 
@@ -57,7 +58,7 @@ struct ExpressionBuilder {
         boolOperator oper = boolOperator::NOTHING;
 
         size_t expIndex;
-        vector<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
+        unordered_set<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
         int lv;//highest lv will be calculated first, children have higher lv than their parent
 
         pair<char, int> valFound;
@@ -80,8 +81,21 @@ struct ExpressionBuilder {
         }
         void addExp() { addVal(valFound.first); }
         void addVal(uint32_t val) {
+            vals.insert(val | negate32thBit[foundNegate]);
+            foundNegate = 0;
+            /*
+            if (simped)return;
+            val |= negate32thBit[foundNegate];
             vals.push_back(val | negate32thBit[foundNegate]);
             foundNegate = 0;
+            if (vals.find(val) != vals.end())return;
+            if (vals.find(val ^ 0x80000000) != vals.end()) {
+                simped = 1;
+                vals.clear();
+                val = 26u | negate32thBit[!oper];
+            }
+            vals.insert(val);
+            */
         }
         void flip_foundNegate() { foundNegate = !foundNegate; }
         void setValFound(char val, int isChar) {
@@ -105,11 +119,21 @@ struct ExpressionBuilder {
             const size_t fn = negate32thBit[foundNegate];
             foundNegate = 0;
             for (const size_t val : exp->vals)
-                vals.push_back(val | fn);
+                vals.insert(val | fn);
         }
         void flipEq() {
             oper = boolOperator(oper ^ 1);
-            FOR(i, vals.size()) vals[i] ^= 0x80000000;
+            uint32_t valsSize = vals.size(), * temp = new uint32_t[valsSize];
+            for (const uint32_t val : vals) {
+                *temp = val ^ 0x80000000;
+                temp++;
+            }
+            vals.clear();
+            temp -= valsSize;
+            while (valsSize--) {
+                vals.insert(*temp);
+                temp++;
+            }
         }
         ~ExpressionInfo() { }
     };
@@ -195,7 +219,7 @@ struct ExpressionBuilder {
         currExp = baseLine->holdingChild;
 
         if (currExp->oper == boolOperator::NOTHING) {//fix bug: ~(A&B)
-            const size_t val = currExp->vals[0], index = currExp->vals[0] & 0x7FFFFFFF;
+            const size_t val = *currExp->vals.begin(), index = val & 0x7FFFFFFF;
             if (index > 27 && (val >> 31)) 
                 expInfos[index - 27u].flipEq();
         }
