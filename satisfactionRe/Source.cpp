@@ -9,10 +9,10 @@
 #define FORS(i, s, n) for (size_t i = s; i < n; i++)
 #define FOR1(i, n) for (size_t i = 1u; i < n; i++)
 #define FOR1p(s, e) for (s++; s < e; s++)
-//#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFFu] ^ (expVal >> 31)//variable with negation
+//#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFF] ^ (expVal >> 31)//variable with negation
 /*
     expVals[i], 32th-bit = negation flag, 1st-31th bit = variable/expression
-    0x7FFFFFFFu = 0111...1111 is used to remove negation flag
+    0x7FFFFFFF = 0111...1111 is used to remove negation flag
 */
 
 using namespace std;
@@ -27,7 +27,7 @@ enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can'
 struct Expression {//1 boolean operation per 1 expression
     boolOperator oper = boolOperator::NOTHING;
 
-    size_t expIndex, len = 0, *vals = NULL;//0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
+    size_t expIndex, len = 0, *vals = NULL;//0-25=A-Z, 26=true, 27-70=an index of an Expression, 32th-bit for negation
     int lv;//highest lv will be calculated first, children have higher lv than their parent
     //vector<size_t> *valsVector = nullptr;
     Expression(boolOperator oper, int lv, size_t expIndex):
@@ -44,7 +44,7 @@ struct Expression {//1 boolean operation per 1 expression
         //valsVector->reserve(len);
 
         for (const size_t val : expInfo_vals) {
-            *it_val = indexMapper[val & 0x7FFFFFFFu] | val & 0x80000000;
+            *it_val = indexMapper[val & 0x7FFFFFFF] | val & 0x80000000;
             //valsVector->push_back(*it_val);
             it_val++;
         }
@@ -58,7 +58,7 @@ struct ExpressionBuilder {
         boolOperator oper = boolOperator::NOTHING;
 
         size_t expIndex;
-        unordered_set<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27=false, 28-70=an index of an Expression, 32th-bit for negation
+        unordered_set<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27-70=an index of an Expression, 32th-bit for negation
         int lv;//highest lv will be calculated first, children have higher lv than their parent
 
         pair<char, int> valFound;
@@ -144,9 +144,9 @@ struct ExpressionBuilder {
         expInfos.reserve(70);//prevent reallocation which will mess up all the address
 
         ExpressionInfo* baseLine, * currExp;
-        expInfos.emplace_back(boolOperator::NOTHING, 27u, nullptr);//baseLine
+        expInfos.emplace_back(boolOperator::NOTHING, 26u, nullptr);//baseLine
         baseLine = &expInfos.back();
-        expInfos.emplace_back(boolOperator::NOTHING, 28u, baseLine);
+        expInfos.emplace_back(boolOperator::NOTHING, 27u, baseLine);
         currExp = &expInfos.back();
         baseLine->holdingChild = currExp;
 
@@ -220,30 +220,30 @@ struct ExpressionBuilder {
 
         if (currExp->oper == boolOperator::NOTHING) {//fix bug: ~(A&B)
             const size_t val = *currExp->vals.begin(), index = val & 0x7FFFFFFF;
-            if (index > 27 && (val >> 31)) 
-                expInfos[index - 27u].flipEq();
+            if (index > 26 && (val >> 31)) 
+                expInfos[index - 26u].flipEq();
         }
 
         walkTreeExp(retExp, expInfos, currExp, 0);
         
         size_t indexMapper[98];
-        FOR(i, 28u) indexMapper[i] = i;
+        FOR(i, 27u) indexMapper[i] = i;
 
         if (retExp.empty()) {//fix bug "if A then" ;(
             currExp = baseLine->holdingChild;
-            retExp.emplace_back(currExp->oper, 0, 28u);
-            indexMapper[28u] = 28u;
-            retExp[0].addValsFromExpInfo(currExp->vals, 28u, indexMapper);
+            retExp.emplace_back(currExp->oper, 0, 27u);
+            indexMapper[27u] = 27u;
+            retExp[0].addValsFromExpInfo(currExp->vals, 27u, indexMapper);
         }
         else {
             sort(retExp.begin(), retExp.end(), sortExpressionInfo());
             {
-                size_t currIndex = 28u;
+                size_t currIndex = 27u;
                 for (const Expression& expp : retExp)
                     indexMapper[expp.expIndex] = currIndex++;
             }
             for (Expression& expp : retExp) {//sorting messes up all the addresses of vals
-                currExp = &expInfos[expp.expIndex - 27u];
+                currExp = &expInfos[expp.expIndex - 26u];
                 expp.addValsFromExpInfo(currExp->vals, currExp->expIndex, indexMapper);
             }
         }
@@ -254,9 +254,9 @@ struct ExpressionBuilder {
 
         const int nextLv = lv + 1;
         for (const size_t val : currExp->vals) {
-            size_t index = val & 0x7FFFFFFFu;
-            if (index > 27) 
-                walkTreeExp(retExp, expInfos, &expInfos[index - 27u], nextLv);
+            size_t index = val & 0x7FFFFFFF;
+            if (index > 26) 
+                walkTreeExp(retExp, expInfos, &expInfos[index - 26u], nextLv);
         }
     }
     struct sortExpressionInfo {
@@ -267,7 +267,7 @@ struct ExpressionBuilder {
 
 
     static void add_ORexp_with_ANDcurr(vector<ExpressionInfo>& expInfos, ExpressionInfo*& baseLine, ExpressionInfo*& currExp, size_t& newNumBoolFound, size_t* varFound) {
-        expInfos.emplace_back(boolOperator::OR, expInfos.size() + 27u, baseLine);
+        expInfos.emplace_back(boolOperator::OR, expInfos.size() + 26u, baseLine);
         ExpressionInfo* newORexp = &expInfos.back();
         newORexp->setValFound(currExp->expIndex, 0u);
         newORexp->addValAny(newNumBoolFound, varFound);// A&B|C
@@ -277,7 +277,7 @@ struct ExpressionBuilder {
         currExp = newORexp;
     }
     static void add_ANDexp_to_ORcurr(vector<ExpressionInfo>& expInfos, ExpressionInfo*& currExp, size_t& newNumBoolFound, size_t* varFound) {
-        expInfos.emplace_back(boolOperator::AND, expInfos.size() + 27u, currExp->baseLine);
+        expInfos.emplace_back(boolOperator::AND, expInfos.size() + 26u, currExp->baseLine);
         ExpressionInfo* newANDexp = &expInfos.back();
         newANDexp->addValFromOR(currExp, newNumBoolFound, varFound);
 
@@ -287,7 +287,7 @@ struct ExpressionBuilder {
         currExp = newANDexp;
     }
     static void add_baseLine_to_currExp(vector<ExpressionInfo>& expInfos, ExpressionInfo*& baseLine, ExpressionInfo*& currExp) {
-        expInfos.emplace_back(boolOperator::NOTHING, expInfos.size() + 27u, currExp);
+        expInfos.emplace_back(boolOperator::NOTHING, expInfos.size() + 26u, currExp);
         ExpressionInfo* newExp = &expInfos.back();
 
         currExp->holdingChild = newExp;
@@ -350,8 +350,8 @@ struct CondStack {
         findValAnsLen[0] = findValAnsLen[1] = boolIndexLen;
         FOR(i, boolIndexLen) findValAns[0][i] = findValAns[1][i] = boolVarIndex[i];
 
-        uint32_t memVal[75];//array index: [0-25=A-Z], [26=false], [27=true], [28-74=Exps]
-        memVal[26] = 0u; memVal[27] = 1u;
+        uint32_t memVal[75];//array index: [0-25=A-Z], [26=true], [27-74=Exps]
+        memVal[26] = 1u;
 
         //added to prevent vector reallocation
         uint32_t ansLen = prev.allAns[prev.condState].size() * allPossBool;
@@ -359,7 +359,7 @@ struct CondStack {
         uint32_t ansLenEach[2] = { 0,0 };
         ansLen = 0;
 
-        uint32_t* lastExpResult = &memVal[28u + exps.size() - 1];
+        uint32_t* lastExpResult = &memVal[27u + exps.size() - 1];
         for (uint32_t prevAnsMem : prev.allAns[prev.condState]) {
 
             FOR(i, prev_boolIndexLen) 
@@ -373,15 +373,15 @@ struct CondStack {
                 for (const Expression& exp : exps) {//dereferencing an array of exps is slow, removed by using foreach
                     //memVal[exp.expIndex] = boolOperation[exp.oper](exp.vals, exp.vals + exp.len, memVal);
                     size_t * expVals = exp.vals, *expVale = exp.vals + exp.len;
-                    uint32_t ret = memVal[expVals[0] & 0x7FFFFFFFu] ^ (expVals[0] >> 31);
+                    uint32_t ret = memVal[expVals[0] & 0x7FFFFFFF] ^ (expVals[0] >> 31);
                     switch (exp.oper) {
                     case boolOperator::AND: 
                         FOR1p(expVals, expVale) 
-                            ret &= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
+                            ret &= memVal[*expVals & 0x7FFFFFFF] ^ (*expVals >> 31);
                         break;
                     case boolOperator::OR: 
                         FOR1p(expVals, expVale) 
-                            ret |= memVal[*expVals & 0x7FFFFFFFu] ^ (*expVals >> 31);
+                            ret |= memVal[*expVals & 0x7FFFFFFF] ^ (*expVals >> 31);
                         break;
                     }
                     memVal[exp.expIndex] = ret;
