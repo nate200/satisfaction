@@ -61,7 +61,7 @@ struct ExpressionBuilder {
         unordered_set<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27-70=an index of an Expression, 32th-bit for negation
         int lv;//highest lv will be calculated first, children have higher lv than their parent
 
-        pair<char, int> valFound;
+        uint32_t valFound;
 
         ExpressionInfo* baseLine = nullptr, * holdingChild = nullptr;//vector won't reallocate because of reserve(96);
         size_t foundNegate = 0;
@@ -70,48 +70,19 @@ struct ExpressionBuilder {
 
         static constexpr size_t negate32thBit[2] = { 0u , 0x80000000 };
         
-        void addValAny() {
-            if (valFound.second) {//add variable A-Z
-                const int index = valFound.first - 65;
-                addVal(index);
-            }
-            else addVal(valFound.first);//add exp
-        }
-        void addExp() { addVal(valFound.first); }
-        void addVal(uint32_t val) {
-            vals.insert(val | negate32thBit[foundNegate]);
+        void addValFound() {
+            vals.insert(valFound | negate32thBit[foundNegate]);
             foundNegate = 0;
-            /*
-            if (simped)return;
-            val |= negate32thBit[foundNegate];
-            vals.push_back(val | negate32thBit[foundNegate]);
-            foundNegate = 0;
-            if (vals.find(val) != vals.end())return;
-            if (vals.find(val ^ 0x80000000) != vals.end()) {
-                simped = 1;
-                vals.clear();
-                val = 26u | negate32thBit[!oper];
-            }
-            vals.insert(val);
-            */
         }
-        void flip_foundNegate() { foundNegate = !foundNegate; }
-        void setValFound(char val, int isChar) {
-            valFound.first = val;
-            valFound.second = isChar;
-        }
-        void addValFromOR(ExpressionInfo *exp) {
-            valFound.first = exp->valFound.first;
-            valFound.second = exp->valFound.second;
+        void addValFound_FromOR(ExpressionInfo *exp) {
+            valFound = exp->valFound;
             foundNegate = exp->foundNegate;
-            addValAny();// A|B&C, A|~()&C
+            addValFound();// A|B&C, A|~()&C
         }
         void takeOverExp(ExpressionInfo* exp) {
-            valFound.first = exp->valFound.first;
-            valFound.second = exp->valFound.second;
-            foundNegate ^= exp->foundNegate;//B&~(~((~(A))))
+            valFound = exp->valFound;
+            foundNegate ^= exp->foundNegate;//B&~(~((~(A)))), B&((((A))))
             holdingChild = nullptr;
-            //addValAny(newNumBoolFound, _varFound); removed to fix a bug: B&((((A))))
         }
         void addAllValsFromChild(ExpressionInfo* exp) {
             const size_t fn = negate32thBit[foundNegate];
@@ -119,6 +90,7 @@ struct ExpressionBuilder {
             for (const size_t val : exp->vals)
                 vals.insert(val | fn);
         }
+        void flip_foundNegate() { foundNegate = !foundNegate; }
         void flipEq() {
             oper = boolOperator(oper ^ 1);
             uint32_t valsSize = vals.size(), * temp = new uint32_t[valsSize];
@@ -154,24 +126,24 @@ struct ExpressionBuilder {
             case '&':
                 switch (currExp->oper) {
                 case boolOperator::AND:
-                    currExp->addValAny();
+                    currExp->addValFound();
                     break;
                 case boolOperator::OR:
                     add_ANDexp_to_ORcurr(expInfos, currExp);
                     break;
                 case boolOperator::NOTHING:
-                    currExp->addValAny();
+                    currExp->addValFound();
                     currExp->oper = boolOperator::AND;
                     break;
                 }
                 break;
             case '|':
-                currExp->addValAny();
+                currExp->addValFound();
                 switch (currExp->oper) {
                 case boolOperator::AND:
                     if (baseLine->holdingChild->oper == boolOperator::OR) {
                         currExp = baseLine->holdingChild;//go back to OR
-                        currExp->addExp();
+                        currExp->addValFound();// E|A&B|C => E|()|C
                     }
                     else add_ORexp_with_ANDcurr(expInfos, baseLine, currExp);
                     break;
@@ -194,9 +166,9 @@ struct ExpressionBuilder {
                         expInfos.pop_back();
                 }
                 else {
-                    currExp->addValAny();
+                    currExp->addValFound();
                     if (baseLine->holdingChild != currExp) //D&(A|B&C)
-                        baseLine->holdingChild->addValAny();
+                        baseLine->holdingChild->addValFound();
                 }
 
                 currExp = currExp->baseLine;
@@ -204,14 +176,14 @@ struct ExpressionBuilder {
                 break;
             }
             default:
-                currExp->setValFound(exp[i], 1);//cant add new variable until the next oper sign is known
+                currExp->valFound = exp[i] - 65u;//cant add new variable until the next oper sign is known
                 break;
             }
         }
         //cout << "\n";
-        currExp->addValAny();
+        currExp->addValFound();
         if (baseLine->holdingChild != currExp) //fix bug: A&B|C&(Z&X)
-            baseLine->holdingChild->addValAny();
+            baseLine->holdingChild->addValFound();
 
         retExp.reserve(expInfos.size() - 1);
         currExp = baseLine->holdingChild;
@@ -267,19 +239,19 @@ struct ExpressionBuilder {
     static void add_ORexp_with_ANDcurr(vector<ExpressionInfo>& expInfos, ExpressionInfo*& baseLine, ExpressionInfo*& currExp) {
         expInfos.emplace_back(boolOperator::OR, expInfos.size() + 26u, baseLine);
         ExpressionInfo* newORexp = &expInfos.back();
-        newORexp->setValFound(currExp->expIndex, 0u);
-        newORexp->addValAny();// A&B|C
+        newORexp->valFound = currExp->expIndex;
+        newORexp->addValFound();// A&B|C
 
-        baseLine->setValFound(newORexp->expIndex,0);//fix bug: B&((((A)&C|D))), forgot to change valFound
+        baseLine->valFound = newORexp->expIndex;//fix bug: B&((((A)&C|D))), forgot to change valFound
         baseLine->holdingChild = newORexp;
         currExp = newORexp;
     }
     static void add_ANDexp_to_ORcurr(vector<ExpressionInfo>& expInfos, ExpressionInfo*& currExp) {
         expInfos.emplace_back(boolOperator::AND, expInfos.size() + 26u, currExp->baseLine);
         ExpressionInfo* newANDexp = &expInfos.back();
-        newANDexp->addValFromOR(currExp);
+        newANDexp->addValFound_FromOR(currExp);
 
-        currExp->setValFound(newANDexp->expIndex, 0);
+        currExp->valFound = newANDexp->expIndex;
         currExp->foundNegate = 0;
 
         currExp = newANDexp;
@@ -289,7 +261,7 @@ struct ExpressionBuilder {
         ExpressionInfo* newExp = &expInfos.back();
 
         currExp->holdingChild = newExp;
-        currExp->setValFound(newExp->expIndex, 0);//~()&A, ()|A, ()
+        currExp->valFound = newExp->expIndex;//~()&A, ()|A, ()
 
         baseLine = currExp;
         currExp = newExp;
@@ -337,9 +309,9 @@ struct CondStack {
             ExpressionBuilder::stringToExp(exps, cond);
 
             for (const Expression& exp : exps) {
-                uint32_t* valsEnd = exp.vals + exp.len;
-                for (uint32_t * val = exp.vals; val < valsEnd; val++) {
-                    const uint32_t index = *val & 0x7FFFFFFF;
+                size_t* valsEnd = exp.vals + exp.len;
+                for (size_t* val = exp.vals; val < valsEnd; val++) {
+                    const size_t index = *val & 0x7FFFFFFF;
                     if (index > 25) continue;
                     allPossBool += !varFound[index]; // == 0
                     varFound[index] |= 1u;
