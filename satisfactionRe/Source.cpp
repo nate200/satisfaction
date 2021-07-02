@@ -9,19 +9,8 @@
 #define FORS(i, s, n) for (size_t i = s; i < n; i++)
 #define FOR1(i, n) for (size_t i = 1u; i < n; i++)
 #define FOR1p(s, e) for (s++; s < e; s++)
-//#define VALWNEGATE(valMem, expVal) valMem[expVal & 0x7FFFFFFF] ^ (expVal >> 31)//variable with negation
-/*
-    expVals[i], 32th-bit = negation flag, 1st-31th bit = variable/expression
-    0x7FFFFFFF = 0111...1111 is used to remove negation flag
-*/
 
 using namespace std;
-
-/*uint32_t(*boolOperation[3])(uint32_t*, uint32_t*, uint32_t*) = {
-    { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem, *expVals); FOR1p(expVals,expVale) ret &= VALWNEGATE(valMem, *expVals); return ret; } },
-    { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { uint32_t ret = VALWNEGATE(valMem, *expVals); FOR1p(expVals,expVale) ret |= VALWNEGATE(valMem, *expVals); return ret; } },
-    { [](uint32_t* expVals, uint32_t* expVale, uint32_t* valMem) { return VALWNEGATE(valMem, *expVals); } }
-};*/
 
 enum boolOperator { AND = 0, OR = 1, NOTHING = 2 }; //replace with integer, can't convert enum to int ;(
 struct Expression {//1 boolean operation per 1 expression
@@ -79,7 +68,7 @@ struct ExpressionBuilder {
             foundNegate = exp->foundNegate;
             addValFound();// A|B&C, A|~()&C
         }
-        void takeOverExp(ExpressionInfo* exp) {
+        void takeValFound(ExpressionInfo* exp) {
             valFound = exp->valFound;
             foundNegate ^= exp->foundNegate;//B&~(~((~(A)))), B&((((A))))
             holdingChild = nullptr;
@@ -91,19 +80,21 @@ struct ExpressionBuilder {
                 vals.insert(val | fn);
         }
         void flip_foundNegate() { foundNegate = !foundNegate; }
-        void flipEq() {
-            oper = boolOperator(oper ^ 1);
-            uint32_t valsSize = vals.size(), * temp = new uint32_t[valsSize];
-            for (const uint32_t val : vals) {
-                *temp = val ^ 0x80000000;
-                temp++;
-            }
+        void tryTakeingOverChild(vector<ExpressionInfo> &expInfos) {
+            const size_t val = *vals.begin(), index = val & 0x7FFFFFFF;
+            if (index < 27) return;
+
+            ExpressionInfo* valExp = &expInfos[index - 26u];
+
+            oper = boolOperator(valExp->oper ^ val >> 31);
             vals.clear();
-            temp -= valsSize;
-            while (valsSize--) {
-                vals.insert(*temp);
-                temp++;
-            }
+
+            const size_t fn = negate32thBit[val >> 31];
+            for (const size_t ch_val : valExp->vals)
+                vals.insert(ch_val ^ fn);
+
+            valExp->vals.clear();
+            valExp->oper = boolOperator::NOTHING;
         }
         ~ExpressionInfo() { }
     };
@@ -161,7 +152,7 @@ struct ExpressionBuilder {
             }
             case ')': {//can't merge child and baseline with the same oper in here, case: A|(B|C)&D
                 if (currExp->oper == boolOperator::NOTHING) {
-                    baseLine->takeOverExp(currExp);
+                    baseLine->takeValFound(currExp);
                     if (&expInfos.back() == currExp)//A|((A&B|C)) = |,(,&,|
                         expInfos.pop_back();
                 }
@@ -188,11 +179,8 @@ struct ExpressionBuilder {
         retExp.reserve(expInfos.size() - 1);
         currExp = baseLine->holdingChild;
 
-        if (currExp->oper == boolOperator::NOTHING) {//fix bug: ~(A&B)
-            const size_t val = *currExp->vals.begin(), index = val & 0x7FFFFFFF;
-            if (index > 26 && (val >> 31)) 
-                expInfos[index - 26u].flipEq();
-        }
+        if (currExp->oper == boolOperator::NOTHING) //fix bug: ~(A&B)
+            currExp->tryTakeingOverChild(expInfos);
 
         walkTreeExp(retExp, expInfos, currExp, 0);
         
