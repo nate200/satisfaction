@@ -10,6 +10,8 @@ if insideEquation.len = 0
 	return 1;
 	//why? see the first 4 example what happen to the effected variable
 
+A&B&B&A&C&~A&C|G
+
 
 X&Y&(~X|W|A)
 X&Y&(0|W|A)

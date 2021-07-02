@@ -39,15 +39,21 @@ DNF: (C&D&E&T)|F|I|Q
 S&(S&((((((~K&((Q))|(I&(Q&R))&~E&P)&J)|P|K)|T|S&(~(S)|(D&M|(N&M|(Q)&(~S)&K|~((~(R|F|(P|E)&(Q&H|((B|~G|(I))))))))))))))
 DNF: (B&E&S)|(D&M&S)|(E&~G&S)|(E&H&Q&S)|(E&I&S)|(F&S)|(J&Q&S)|(K&S)|(M&N&S)|(P&S)|(R&S)|(S&T)
 
+if B|~B|A&A|V then
+
 A&~A
 
+A&B&(A|~A)&B
+B&(A|~(A&~A))
+
 A&~A&C&D
-C&DA&~A
+C&D&A&~A
 
 A&B&~A&C
 A&B&~A|C
 A&B&~A&D|C
 C|A&B&~A
+C|~(C|~C)&B&~A
 C|A&B&~A|G
 C|A&B&~A&D
 C|A&B&~A&D|G
@@ -200,5 +206,11 @@ Z|B&~~(~((A&D)|(D&F)|A|~A))&C|X
 
 A|~A
 
+A|~A|D&F
 A|B|~A|C
+A|B|~A|(A&B)
 (C&A)|B|~A
+
+
+
+A|(B|C)|~(G&C)|(~Y|(Z|F)|((P|N)|~(J&O))|~(G&D))|Y
