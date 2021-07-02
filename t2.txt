@@ -1,3 +1,48 @@
+if ~O&(L|~S&~(~~M)&~M)&U&N|M|~~(~((~~A|~T|P|~~Z)&(Q|K))|P|~((U&Z))) then
+    checkpoint
+    if (~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
+        checkpoint
+    else
+        checkpoint
+    fi
+    if K|C&~~(~Q|A&~I&~A|(A&X&(~(T|G|~L|~S&~~A&B&~(N|((C|~P&~L&(X|(~T&O|~Q|~X|(B&A)&(G)&K&(~~(~~A|Z))))))))))) then
+        checkpoint
+        if (~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
+            checkpoint
+        else
+            checkpoint
+        fi
+    else
+        checkpoint
+        if (~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
+            checkpoint
+        else
+            checkpoint
+        fi
+    fi
+else
+    checkpoint
+    if (~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
+        checkpoint
+    else
+        checkpoint
+    fi
+    if K|C&~~(~Q|A&~I&~A|(A&X&(~(T|G|~L|~S&~~A&B&~(N|((C|~P&~L&(X|(~T&O|~Q|~X|(B&A)&(G)&K&(~~(~~A|Z))))))))))) then
+        checkpoint
+        if (~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
+            checkpoint
+        else
+            checkpoint
+        fi
+    else
+        checkpoint
+        if (~S|K&I&((B&Z|~~~B)&~C|~G|~(C|Z&~~~~~~(M|(M&(C&~(S|~N)&((N&C&~(B&(~~T|S|~(~~G|~P)&~~~(S|C))))))))))) then
+            checkpoint
+        else
+            checkpoint
+        fi
+    fi
+fi
 if ~~(~I&A&(((~~(I&~~I|~~~(O&R)&A|(~P|~A|~Z&~~~G|~R|~I&L|~P&G)|S|Z))))&(X&~(((G)&I&)))) then
     checkpoint
     if I&((~S)&(T|P&~B|(B&Z|~(((M|~N|I&C&T|A&O&~K)&S&~(I&R&M|Q&K|~~~~G&B|~(A))))))) then
