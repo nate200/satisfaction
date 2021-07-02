@@ -59,28 +59,33 @@ struct ExpressionBuilder {
 
         static constexpr size_t negate32thBit[2] = { 0u , 0x80000000 };
         
-        void addValFound() {
-            vals.insert(valFound | negate32thBit[foundNegate]);
+        void flip_foundNegate() { foundNegate = !foundNegate; }
+        void addValFound(vector<ExpressionInfo> & expInfos) {
+            if (valFound > 26u) {
+                ExpressionInfo * chExp = &expInfos[valFound - 26u];
+                if (chExp->oper == boolOperator::NOTHING) {
+                    //const uint32_t val = * chExp->vals.begin(), index = val & 0x7FFFFFFF;
+                    //vals.insert(val ^ negate32thBit[foundNegate]);
+                    vals.insert(*chExp->vals.begin() ^ negate32thBit[foundNegate]);
+                    if (&expInfos.back() == chExp)
+                        expInfos.pop_back();
+                }
+                else vals.insert(valFound | negate32thBit[foundNegate]);
+            }
+            else vals.insert(valFound | negate32thBit[foundNegate]);
             foundNegate = 0;
         }
-        void addValFound_FromOR(ExpressionInfo *exp) {
+        void addAllValsFromExpValFound(ExpressionInfo& exp, uint32_t expNegate) {
+            const size_t fn = negate32thBit[foundNegate ^ expNegate];
+            for (const size_t val : exp.vals)
+                vals.insert(val ^ fn);
+        }
+        void addValFound_FromOR(vector<ExpressionInfo>& expInfos, ExpressionInfo *exp) {
             valFound = exp->valFound;
             foundNegate = exp->foundNegate;
-            addValFound();// A|B&C, A|~()&C
+            addValFound(expInfos);// A|B&C, A|~()&C
         }
-        void takeValFound(ExpressionInfo* exp) {
-            valFound = exp->valFound;
-            foundNegate ^= exp->foundNegate;//B&~(~((~(A)))), B&((((A))))
-            holdingChild = nullptr;
-        }
-        void addAllValsFromChild(ExpressionInfo* exp) {
-            const size_t fn = negate32thBit[foundNegate];
-            foundNegate = 0;
-            for (const size_t val : exp->vals)
-                vals.insert(val | fn);
-        }
-        void flip_foundNegate() { foundNegate = !foundNegate; }
-        void tryTakeingOverChild(vector<ExpressionInfo> &expInfos) {
+        void tryTakingOverChild(vector<ExpressionInfo> &expInfos) {
             const size_t val = *vals.begin(), index = val & 0x7FFFFFFF;
             if (index < 27) return;
 
@@ -117,50 +122,46 @@ struct ExpressionBuilder {
             case '&':
                 switch (currExp->oper) {
                 case boolOperator::AND:
-                    currExp->addValFound();
+                    currExp->addValFound(expInfos);
                     break;
                 case boolOperator::OR:
                     add_ANDexp_to_ORcurr(expInfos, currExp);
                     break;
                 case boolOperator::NOTHING:
-                    currExp->addValFound();
                     currExp->oper = boolOperator::AND;
+                    currExp->addValFound(expInfos);
                     break;
                 }
                 break;
             case '|':
-                currExp->addValFound();
                 switch (currExp->oper) {
                 case boolOperator::AND:
+                    currExp->addValFound(expInfos);
                     if (baseLine->holdingChild->oper == boolOperator::OR) {
                         currExp = baseLine->holdingChild;//go back to OR
-                        currExp->addValFound();// E|A&B|C => E|()|C
+                        currExp->addValFound(expInfos);// E|A&B|C => E|()|C
                     }
                     else add_ORexp_with_ANDcurr(expInfos, baseLine, currExp);
                     break;
+                case boolOperator::OR:
+                    currExp->addValFound(expInfos);
+                    break;
                 case boolOperator::NOTHING:
                     currExp->oper = boolOperator::OR;
+                    currExp->addValFound(expInfos);
                     break;
                 }
                 break;
             case '~':
                 currExp->flip_foundNegate();
                 break;
-            case '(': {//like normal A-Z, it's a variable with other variables inside
+            case '(': //like normal A-Z, it's a variable with other variables inside
                 add_baseLine_to_currExp(expInfos, baseLine, currExp);
                 break;
-            }
             case ')': {//can't merge child and baseline with the same oper in here, case: A|(B|C)&D
-                if (currExp->oper == boolOperator::NOTHING) {
-                    baseLine->takeValFound(currExp);
-                    if (&expInfos.back() == currExp)//A|((A&B|C)) = |,(,&,|
-                        expInfos.pop_back();
-                }
-                else {
-                    currExp->addValFound();
-                    if (baseLine->holdingChild != currExp) //D&(A|B&C)
-                        baseLine->holdingChild->addValFound();
-                }
+                currExp->addValFound(expInfos);
+                if (baseLine->holdingChild != currExp) //D&(A|B&C)
+                    baseLine->holdingChild->addValFound(expInfos);
 
                 currExp = currExp->baseLine;
                 baseLine = currExp->baseLine;
@@ -172,15 +173,15 @@ struct ExpressionBuilder {
             }
         }
         //cout << "\n";
-        currExp->addValFound();
+        currExp->addValFound(expInfos);
         if (baseLine->holdingChild != currExp) //fix bug: A&B|C&(Z&X)
-            baseLine->holdingChild->addValFound();
+            baseLine->holdingChild->addValFound(expInfos);
 
         retExp.reserve(expInfos.size() - 1);
         currExp = baseLine->holdingChild;
 
         if (currExp->oper == boolOperator::NOTHING) //fix bug: ~(A&B)
-            currExp->tryTakeingOverChild(expInfos);
+            currExp->tryTakingOverChild(expInfos);
 
         walkTreeExp(retExp, expInfos, currExp, 0);
         
@@ -228,7 +229,7 @@ struct ExpressionBuilder {
         expInfos.emplace_back(boolOperator::OR, expInfos.size() + 26u, baseLine);
         ExpressionInfo* newORexp = &expInfos.back();
         newORexp->valFound = currExp->expIndex;
-        newORexp->addValFound();// A&B|C
+        newORexp->addValFound(expInfos);// A&B|C
 
         baseLine->valFound = newORexp->expIndex;//fix bug: B&((((A)&C|D))), forgot to change valFound
         baseLine->holdingChild = newORexp;
@@ -237,7 +238,7 @@ struct ExpressionBuilder {
     static void add_ANDexp_to_ORcurr(vector<ExpressionInfo>& expInfos, ExpressionInfo*& currExp) {
         expInfos.emplace_back(boolOperator::AND, expInfos.size() + 26u, currExp->baseLine);
         ExpressionInfo* newANDexp = &expInfos.back();
-        newANDexp->addValFound_FromOR(currExp);
+        newANDexp->addValFound_FromOR(expInfos, currExp);
 
         currExp->valFound = newANDexp->expIndex;
         currExp->foundNegate = 0;
