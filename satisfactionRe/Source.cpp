@@ -19,10 +19,8 @@ struct Expression {//1 boolean operation per 1 expression
     size_t expIndex, len = 0, *vals = NULL;//0-25=A-Z, 26=true, 27-70=an index of an Expression, 32th-bit for negation
     int lv;//highest lv will be calculated first, children have higher lv than their parent
     //vector<size_t> *valsVector = nullptr;
-    Expression(boolOperator oper, int lv, size_t expIndex):
-        oper(oper), lv(lv), expIndex(expIndex){
-    }
-    void addValsFromExpInfo(unordered_set<size_t> &expInfo_vals, size_t expInfo_expIndex, size_t* indexMapper) {
+    Expression(boolOperator oper, int lv, size_t expInfo_expIndex, unordered_set<size_t>& expInfo_vals, size_t* indexMapper)
+        : oper(oper), lv(lv){
         len = expInfo_vals.size();
         expIndex = indexMapper[expInfo_expIndex];
 
@@ -46,9 +44,9 @@ struct ExpressionBuilder {
     struct ExpressionInfo {//1 boolean operation per 1 expression
         boolOperator oper = boolOperator::NOTHING;
 
-        size_t expIndex;
+        size_t expIndex, pindex;
         unordered_set<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27-70=an index of an Expression, 32th-bit for negation
-        int lv;//highest lv will be calculated first, children have higher lv than their parent
+        int lv = -9999999;//highest lv will be calculated first, children have higher lv than their parent
 
         uint32_t valFound;
 
@@ -64,8 +62,6 @@ struct ExpressionBuilder {
             if (valFound > 26u) {
                 ExpressionInfo * chExp = &expInfos[valFound - 26u];
                 if (chExp->oper == boolOperator::NOTHING) {
-                    //const uint32_t val = * chExp->vals.begin(), index = val & 0x7FFFFFFF;
-                    //vals.insert(val ^ negate32thBit[foundNegate]);
                     vals.insert(*chExp->vals.begin() ^ negate32thBit[foundNegate]);
                     if (&expInfos.back() == chExp)
                         expInfos.pop_back();
@@ -100,6 +96,10 @@ struct ExpressionBuilder {
 
             valExp->vals.clear();
             valExp->oper = boolOperator::NOTHING;
+        }
+        void setLv(int _lv, size_t _pindex) {
+            lv = _lv;
+            pindex = _pindex;
         }
         ~ExpressionInfo() { }
     };
@@ -177,49 +177,52 @@ struct ExpressionBuilder {
         if (baseLine->holdingChild != currExp) //fix bug: A&B|C&(Z&X)
             baseLine->holdingChild->addValFound(expInfos);
 
-        retExp.reserve(expInfos.size() - 1);
         currExp = baseLine->holdingChild;
 
         if (currExp->oper == boolOperator::NOTHING) //fix bug: ~(A&B)
             currExp->tryTakingOverChild(expInfos);
 
-        walkTreeExp(retExp, expInfos, currExp, 0);
-        
+        uint32_t isAnyAdded = walkTreeExp(expInfos, currExp, 0, currExp->expIndex);
+
         size_t indexMapper[98];
         FOR(i, 27u) indexMapper[i] = i;
 
-        if (retExp.empty()) {//fix bug "if A then" ;(
-            currExp = baseLine->holdingChild;
-            retExp.emplace_back(currExp->oper, 0, 27u);
-            indexMapper[27u] = 27u;
-            retExp[0].addValsFromExpInfo(currExp->vals, 27u, indexMapper);
+        if (isAnyAdded) {
+            sort(expInfos.begin(), expInfos.end(), sortExpressionInfo());
+            while (expInfos.back().lv < 0)expInfos.pop_back();
+
+            size_t currIndex = 27u;
+            for (const ExpressionInfo& expp : expInfos)
+                indexMapper[expp.expIndex] = currIndex++;
+
+            retExp.reserve(expInfos.size());
+            for (ExpressionInfo& expp : expInfos)
+                retExp.emplace_back(expp.oper, expp.lv, expp.expIndex, expp.vals,  indexMapper);
         }
         else {
-            sort(retExp.begin(), retExp.end(), sortExpressionInfo());
-            {
-                size_t currIndex = 27u;
-                for (const Expression& expp : retExp)
-                    indexMapper[expp.expIndex] = currIndex++;
-            }
-            for (Expression& expp : retExp) {//sorting messes up all the addresses of vals
-                currExp = &expInfos[expp.expIndex - 26u];
-                expp.addValsFromExpInfo(currExp->vals, currExp->expIndex, indexMapper);
-            }
+            currExp = baseLine->holdingChild;
+            indexMapper[27u] = 27u;
+            retExp.emplace_back(currExp->oper, 0, 27u, currExp->vals, indexMapper);
         }
     }
-    static void walkTreeExp(vector<Expression>& retExp, vector<ExpressionInfo>& expInfos, ExpressionInfo * currExp, const int lv) {
-        if(currExp->oper != boolOperator::NOTHING)
-            retExp.emplace_back(currExp->oper, lv, currExp->expIndex);
+    static uint32_t walkTreeExp(vector<ExpressionInfo>& expInfos, ExpressionInfo * currExp, const int lv, size_t pindex) {
+        uint32_t isAdded = 0;
+        if (currExp->oper != boolOperator::NOTHING) {
+            currExp->setLv(lv, pindex);
+            isAdded = 1;
+        }
 
         const int nextLv = lv + 1;
+        pindex = currExp->expIndex;
         for (const size_t val : currExp->vals) {
             size_t index = val & 0x7FFFFFFF;
             if (index > 26) 
-                walkTreeExp(retExp, expInfos, &expInfos[index - 26u], nextLv);
+                isAdded |= walkTreeExp(expInfos, &expInfos[index - 26u], nextLv, pindex);
         }
+        return isAdded;
     }
     struct sortExpressionInfo {
-        inline bool operator() (const Expression& exp1, const Expression& exp2) {
+        inline bool operator() (const ExpressionInfo& exp1, const ExpressionInfo& exp2) {
             return (exp1.lv > exp2.lv);
         }
     };
