@@ -44,14 +44,16 @@ struct ExpressionBuilder {
     struct ExpressionInfo {//1 boolean operation per 1 expression
         boolOperator oper = boolOperator::NOTHING;
 
-        size_t expIndex, pindex;
+        size_t expIndex;
         unordered_set<size_t> vals;//not sorted: 0-25=A-Z, 26=true, 27-70=an index of an Expression, 32th-bit for negation
         int lv = -9999999;//highest lv will be calculated first, children have higher lv than their parent
 
-        uint32_t valFound;
+        uint32_t valFound, nthChanged = 1;
 
         ExpressionInfo* baseLine = nullptr, * holdingChild = nullptr;//vector won't reallocate because of reserve(96);
         size_t foundNegate = 0;
+
+        vector<size_t> valsVec;
 
         ExpressionInfo(boolOperator oper, size_t expCounter, ExpressionInfo* baseLine = nullptr) : oper(oper), expIndex(expCounter), baseLine(&*baseLine) {}
 
@@ -97,9 +99,13 @@ struct ExpressionBuilder {
             valExp->vals.clear();
             valExp->oper = boolOperator::NOTHING;
         }
-        void setLv(int _lv, size_t _pindex) {
-            lv = _lv;
-            pindex = _pindex;
+        void addSetToVector() { 
+            valsVec.reserve(vals.size());
+            std::copy(vals.begin(), vals.end(), std::back_inserter(valsVec));
+        }
+        inline bool operator<(const ExpressionInfo& exp) const
+        {
+            return lv > exp.lv;
         }
         ~ExpressionInfo() { }
     };
@@ -188,16 +194,15 @@ struct ExpressionBuilder {
         FOR(i, 27u) indexMapper[i] = i;
 
         if (isAnyAdded) {
-            sort(expInfos.begin(), expInfos.end(), sortExpressionInfo());
-            while (expInfos.back().lv < 0)expInfos.pop_back();
+            simpEqs(expInfos, indexMapper);
 
-            size_t currIndex = 27u;
-            for (const ExpressionInfo& expp : expInfos)
-                indexMapper[expp.expIndex] = currIndex++;
+            size_t index = 27u;
+            for (const ExpressionInfo& exp : expInfos)
+                indexMapper[exp.expIndex] = index++;
 
             retExp.reserve(expInfos.size());
             for (ExpressionInfo& expp : expInfos)
-                retExp.emplace_back(expp.oper, expp.lv, expp.expIndex, expp.vals,  indexMapper);
+                retExp.emplace_back(expp.oper, expp.lv, expp.expIndex, expp.vals, indexMapper);
         }
         else {
             currExp = baseLine->holdingChild;
@@ -208,7 +213,7 @@ struct ExpressionBuilder {
     static uint32_t walkTreeExp(vector<ExpressionInfo>& expInfos, ExpressionInfo * currExp, const int lv, size_t pindex) {
         uint32_t isAdded = 0;
         if (currExp->oper != boolOperator::NOTHING) {
-            currExp->setLv(lv, pindex);
+            currExp->lv = lv;
             isAdded = 1;
         }
 
@@ -221,12 +226,6 @@ struct ExpressionBuilder {
         }
         return isAdded;
     }
-    struct sortExpressionInfo {
-        inline bool operator() (const ExpressionInfo& exp1, const ExpressionInfo& exp2) {
-            return (exp1.lv > exp2.lv);
-        }
-    };
-
 
     static void add_ORexp_with_ANDcurr(vector<ExpressionInfo>& expInfos, ExpressionInfo*& baseLine, ExpressionInfo*& currExp) {
         expInfos.emplace_back(boolOperator::OR, expInfos.size() + 26u, baseLine);
@@ -257,6 +256,105 @@ struct ExpressionBuilder {
 
         baseLine = currExp;
         currExp = newExp;
+    }
+
+    static void simpEqs(vector<ExpressionInfo>& expInfos, size_t * indexMapper) {
+        sort(expInfos.begin(), expInfos.end());
+        while (expInfos.back().lv < 0) expInfos.pop_back();
+
+        size_t anyEqsChanged = 0;
+        for (ExpressionInfo& exp : expInfos) { 
+            exp.addSetToVector();
+            indexMapper[exp.expIndex] = anyEqsChanged++;
+        }
+        anyEqsChanged = 0;
+
+        for(ExpressionInfo & currExp : expInfos) {
+
+            unordered_set<size_t>* valsSet = &currExp.vals;
+            vector<size_t>* valsVec = &currExp.valsVec;
+
+            FOR (i, valsVec->size()) {
+                const size_t val = valsVec->at(i);
+                size_t rawVal = val & 0x7FFFFFFF;
+
+                if (rawVal > 26u) {
+                    size_t val_negate = val & 0x80000000;
+                    ExpressionInfo* chExp = &expInfos[indexMapper[rawVal]];
+
+                    /*if (chExp->oper == boolOperator::NOTHING) {
+                        size_t chVal = *chExp->vals.begin(), raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
+
+                        if (raw_chVal == 26u && currExp.oper != (val_negate >> 31 ^ chVal >> 31)) {
+                            walkClearVals(&currExp, expInfos, indexMapper);
+                            valsSet->insert(26u ^ !currExp.oper << 31);
+                            currExp.oper = boolOperator::NOTHING;
+                            reduced = 1;
+                        }
+                        else if (raw_chVal != 26u) {
+                            chVal ^= val_negate;
+                            if (valsSet->find(chVal) != valsSet->end())continue;
+                            valsVec->push_back(chVal);
+                            valsSet->insert(chVal);
+                        }
+
+                        chExp->oper = boolOperator::NOTHING;
+                        chExp->vals.clear();
+
+                        valsSet->erase(val);
+
+                        anyEqsChanged = 1;
+
+                        if (reduced)break;
+                    }
+                    else */if ((currExp.oper == chExp->oper) ^ val_negate >> 31) {// A&~(A|B)  ,  A|~(A&B)  , A&(A&B)  , A|(A|B)
+
+                        valsSet->erase(val);
+
+                        for (size_t chVal : chExp->vals) {
+                            chVal ^= val_negate;
+                            if (valsSet->find(chVal) != valsSet->end())continue;
+                            valsVec->push_back(chVal);
+                            valsSet->insert(chVal);
+                        }
+                        
+                        anyEqsChanged = 1;
+
+                        chExp->vals.clear();
+                        chExp->oper = boolOperator::NOTHING;
+                    }
+                }
+
+                else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {
+                    walkClearVals(&currExp, expInfos, indexMapper);
+                    valsSet->insert(26u ^ !currExp.oper << 31);
+                    currExp.oper = boolOperator::NOTHING;
+                    anyEqsChanged = 1;
+                    valsVec->clear();
+                    break;
+                }
+
+            }
+            if (valsSet->size() == 1)currExp.oper = boolOperator::NOTHING;
+            valsVec->clear();
+        }
+
+        if (anyEqsChanged) 
+            expInfos.erase(
+                remove_if(expInfos.begin(), expInfos.end(), [](const  ExpressionInfo& exp) { return exp.vals.empty(); }), 
+                expInfos.end()
+            );
+    }
+    static void walkClearVals(ExpressionInfo* currExp, vector<ExpressionInfo>& expInfos, size_t* indexMapper) {
+        for (size_t val : currExp->vals) {
+            val &= 0x7FFFFFFF;
+            if (val > 26u) {
+                ExpressionInfo* tempExp = &expInfos[indexMapper[val]];
+                tempExp->oper = boolOperator::NOTHING;
+                walkClearVals(tempExp, expInfos, indexMapper);
+            }
+        }
+        currExp->vals.clear();
     }
 };
 
@@ -428,6 +526,10 @@ int main() {
         FI = 0x66,
         IF = 0x69
     };
+    /*while (cin >> cond) {
+        ifs.emplace(cond, ifs.top());
+        ifs.pop();
+    }*/
     while (cin >> inputState) {
         switch (inputState[0]) {
         case Statement::IF : {//if
