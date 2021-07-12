@@ -103,6 +103,14 @@ struct ExpressionBuilder {
         void addSetToQueue() { 
             std::copy(vals.begin(), vals.end(), std::back_inserter(valsQueue));
         }
+        void flipEq() {
+            oper = boolOperator(oper ^ 1);
+            vector<size_t> temy;
+            temy.reserve(vals.size());
+            for (const size_t val : vals)temy.push_back(val ^ 0x80000000);
+            vals.clear();
+            std::copy(temy.begin(), temy.end(), std::inserter(vals, vals.begin()));
+        }
         inline bool operator<(const ExpressionInfo& exp) const
         {
             return lv > exp.lv;
@@ -278,7 +286,7 @@ struct ExpressionBuilder {
             vector<size_t> charVals;
 
             while(!valsQueue->empty()) {
-                const size_t val = valsQueue->front(), rawVal = val & 0x7FFFFFFF;
+                size_t val = valsQueue->front(), rawVal = val & 0x7FFFFFFF;
                 valsQueue->pop_front();
 
                 if (rawVal > 26u) {
@@ -330,7 +338,14 @@ struct ExpressionBuilder {
                         chExp->oper = boolOperator::NOTHING;
                     }
 
-                    else if(!val_negate) expRemain.push_back(val);
+                    else if (!val_negate) expRemain.push_back(val);
+                    else if (val_negate && currExp.oper == chExp->oper) { 
+                        chExp->flipEq();
+                        valsSet->erase(val);
+                        val &= 0x7FFFFFFF;
+                        valsSet->insert(val);
+                        expRemain.push_back(val);
+                    }
                 }
 
                 else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {
@@ -364,7 +379,7 @@ struct ExpressionBuilder {
                 }
                 else currExp.oper = boolOperator::NOTHING; 
             }
-            else {//if(currExp.oper == boolOperator::OR){
+            else {
                 while (!expRemain.empty()) {
                     size_t expVal = expRemain.front();
                     ExpressionInfo* exp = &expInfos[indexMapper[expVal & 0x7FFFFFFF]];
