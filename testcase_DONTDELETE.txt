@@ -358,7 +358,7 @@ if ((~A&B|C)&(D&E&((P)&M&O))&I)|B&((~R&Q|J)&(T&B&((A)&B&C))&H)|K|((~S&T|L)&(((A)
                     checkpoint
                 fi
             fi
-            if ~~(~(P|G)&(P|(D&(O|~((~(F|~~~M&~((F|~~A)&H|((~(T&L&))))))))))) then 
+            if ~~(~(P|G)&(P|(D&(O|~((~(F|~~~M&~((F|~~A)&H|((~(T&L))))))))))) then 
                 checkpoint
                 if E&~~~~I&~~~(((C|~E&~L|~((H&J|~H|(P&~~~(~M|P|G&~~(~H|P&(~H)&~(O|~H)|(((~(A|O&(F|L)&O|A&P|~~)))))))))))) then 
                     checkpoint
@@ -606,6 +606,6 @@ E&~~~~I&~~~(((C|~E&~L|~((H&J|~H|(P&~~~(~M|P|G&~~(~H|P&(~H)&~(O|~H)|(((~(A|O&(F|L
 E&J|F&H&~B&(O|((L|P&~~J|K|(D&~(E|~L|F&~~~(~B&~~(J)|P&~~~(~~((F)|(~J|)))))))))
 
 
-~~(~(P|G)&(P|(D&(O|~((~(F|~~~M&~((F|~~A)&H|((~(T&L&)))))))))))
+~~(~(P|G)&(P|(D&(O|~((~(F|~~~M&~((F|~~A)&H|((~(T&L)))))))))))
 
 https://onecompiler.com/cpp/3x3afqh8c

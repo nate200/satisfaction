@@ -274,6 +274,9 @@ struct ExpressionBuilder {
             unordered_set<size_t>* valsSet = &currExp.vals;
             deque<size_t>* valsQueue = &currExp.valsQueue;
 
+            deque<size_t> expRemain;
+            vector<size_t> charVals;
+
             while(!valsQueue->empty()) {
                 const size_t val = valsQueue->front(), rawVal = val & 0x7FFFFFFF;
                 valsQueue->pop_front();
@@ -286,7 +289,7 @@ struct ExpressionBuilder {
 
                         size_t chVal = *chExp->vals.begin() ^ val_negate, raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
 
-                        if(raw_chVal == 26 && currExp.oper != boolOperator::NOTHING && currExp.oper != (chVal >> 31)){
+                        if (raw_chVal == 26 && currExp.oper != boolOperator::NOTHING && currExp.oper != (chVal >> 31)) {
                             walkClearVals(&currExp, expInfos, indexMapper);
                             valsSet->insert(26u ^ !currExp.oper << 31);
                             currExp.oper = boolOperator::NOTHING;
@@ -297,6 +300,7 @@ struct ExpressionBuilder {
                         else {
                             valsQueue->push_back(chVal);
                             valsSet->insert(chVal);
+                            if(raw_chVal < 26u)charVals.push_back(chVal);
                         }
 
                         chExp->vals.clear();
@@ -304,7 +308,7 @@ struct ExpressionBuilder {
                         valsSet->erase(val);
 
                         anyEqsChanged = 1;
-                        
+
                         if (reduced)break;
                     }
 
@@ -317,13 +321,16 @@ struct ExpressionBuilder {
                             if (valsSet->find(chVal) != valsSet->end())continue;
                             valsQueue->push_back(chVal);
                             valsSet->insert(chVal);
+                            if ((chVal & 0x7FFFFFFF) < 26u)charVals.push_back(chVal);
                         }
-                        
+
                         anyEqsChanged = 1;
 
                         chExp->vals.clear();
                         chExp->oper = boolOperator::NOTHING;
                     }
+
+                    else if(!val_negate) expRemain.push_back(val);
                 }
 
                 else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {
@@ -334,6 +341,8 @@ struct ExpressionBuilder {
                     valsQueue->clear();
                     break;
                 }
+
+                else charVals.push_back(val);
 
             }
             if (valsSet->size() == 1) { 
@@ -355,6 +364,38 @@ struct ExpressionBuilder {
                 }
                 else currExp.oper = boolOperator::NOTHING; 
             }
+            /*else if(currExp.oper == boolOperator::AND){
+                while (!expRemain.empty()) {
+                    size_t expVal = expRemain.front();
+                    ExpressionInfo* exp = &expInfos[indexMapper[expVal & 0x7FFFFFFF]];
+                    expRemain.pop_front();
+                    for (const size_t charVal : charVals) {
+                        if (exp->vals.find(charVal) != exp->vals.end()) {
+                            walkClearVals(exp, expInfos, indexMapper);
+                            exp->oper = boolOperator::NOTHING;
+                            valsSet->erase(expVal);
+                            anyEqsChanged = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+            else {*/
+                while (!expRemain.empty()) {
+                    size_t expVal = expRemain.front();
+                    ExpressionInfo* exp = &expInfos[indexMapper[expVal  & 0x7FFFFFFF]];
+                    expRemain.pop_front();
+                    for (const size_t charVal : charVals) {
+                        if (exp->vals.find(charVal) != exp->vals.end()) {
+                            walkClearVals(exp, expInfos, indexMapper);
+                            exp->oper = boolOperator::NOTHING;
+                            valsSet->erase(expVal);
+                            anyEqsChanged = 1;
+                            break;
+                        }
+                    }
+                }
+            //}
         }
 
         if (anyEqsChanged) 
