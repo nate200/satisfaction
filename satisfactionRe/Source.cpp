@@ -271,140 +271,151 @@ struct ExpressionBuilder {
         while (expInfos.back().lv < 0) expInfos.pop_back();
 
         size_t anyEqsChanged = 0;
-        for (ExpressionInfo& exp : expInfos) { 
-            exp.addSetToQueue();
+        for (ExpressionInfo& exp : expInfos) 
             indexMapper[exp.expIndex] = anyEqsChanged++;
-        }
+
         anyEqsChanged = 0;
 
-        for(ExpressionInfo & currExp : expInfos) {
+        for (ExpressionInfo& currExp : expInfos) {
+            uint32_t redo;
+            do {
+                redo = 0;
 
-            unordered_set<size_t>* valsSet = &currExp.vals;
-            deque<size_t>* valsQueue = &currExp.valsQueue;
+                currExp.addSetToQueue();
 
-            deque<size_t> expRemain;
-            vector<size_t> charVals;
+                unordered_set<size_t>* valsSet = &currExp.vals;
+                deque<size_t>* valsQueue = &currExp.valsQueue;
 
-            while(!valsQueue->empty()) {
-                size_t val = valsQueue->front(), rawVal = val & 0x7FFFFFFF;
-                valsQueue->pop_front();
+                deque<size_t> expRemain;
+                vector<size_t> charVals;
 
-                if (rawVal > 26u) {
-                    size_t val_negate = val & 0x80000000;
-                    ExpressionInfo* chExp = &expInfos[indexMapper[rawVal]];
+                while (!valsQueue->empty()) {
+                    size_t val = valsQueue->front(), rawVal = val & 0x7FFFFFFF;
+                    valsQueue->pop_front();
 
-                    if (chExp->oper == boolOperator::NOTHING) {//(1), (~3), (26), (~26), (31), (~31)
+                    if (rawVal > 26u) {
+                        size_t val_negate = val & 0x80000000;
+                        ExpressionInfo* chExp = &expInfos[indexMapper[rawVal]];
 
-                        size_t chVal = *chExp->vals.begin() ^ val_negate, raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
+                        if (chExp->oper == boolOperator::NOTHING) {//(1), (~3), (26), (~26), (31), (~31)
 
-                        if (raw_chVal == 26 && currExp.oper != boolOperator::NOTHING && currExp.oper != (chVal >> 31)) {
-                            walkClearVals(&currExp, expInfos, indexMapper);
-                            valsSet->insert(26u ^ !currExp.oper << 31);
-                            currExp.oper = boolOperator::NOTHING;
+                            size_t chVal = *chExp->vals.begin() ^ val_negate, raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
+
+                            if (raw_chVal == 26 && currExp.oper != boolOperator::NOTHING && currExp.oper != (chVal >> 31)) {
+                                walkClearVals(&currExp, expInfos, indexMapper);
+                                valsSet->insert(26u ^ !currExp.oper << 31);
+                                currExp.oper = boolOperator::NOTHING;
+                                anyEqsChanged = 1;
+                                valsQueue->clear();
+                                reduced = 1;
+                            }
+                            else {
+                                valsQueue->push_back(chVal);
+                                valsSet->insert(chVal);
+                                if (raw_chVal < 26u)charVals.push_back(chVal);
+                            }
+
+                            chExp->vals.clear();
+
+                            valsSet->erase(val);
+
                             anyEqsChanged = 1;
-                            valsQueue->clear();
-                            reduced = 1;
-                        }
-                        else {
-                            valsQueue->push_back(chVal);
-                            valsSet->insert(chVal);
-                            if(raw_chVal < 26u)charVals.push_back(chVal);
+
+                            if (reduced)break;
                         }
 
-                        chExp->vals.clear();
+                        else if ((currExp.oper == chExp->oper) ^ val_negate >> 31) {// A&~(A|B)  ,  A|~(A&B)  , A&(A&B)  , A|(A|B)
 
-                        valsSet->erase(val);
+                            valsSet->erase(val);
 
-                        anyEqsChanged = 1;
+                            for (size_t chVal : chExp->vals) {
+                                chVal ^= val_negate;
+                                if (valsSet->find(chVal) != valsSet->end())continue;
+                                valsQueue->push_back(chVal);
+                                valsSet->insert(chVal);
+                                if ((chVal & 0x7FFFFFFF) < 26u)charVals.push_back(chVal);
+                            }
 
-                        if (reduced)break;
+                            anyEqsChanged = 1;
+
+                            chExp->vals.clear();
+                            chExp->oper = boolOperator::NOTHING;
+                        }
+
+                        else if (!val_negate) expRemain.push_back(val);
+                        else if (val_negate && currExp.oper == chExp->oper) {
+                            chExp->flipEq();
+                            valsSet->erase(val);
+                            val &= 0x7FFFFFFF;
+                            valsSet->insert(val);
+                            expRemain.push_back(val);
+                        }
                     }
 
-                    else if ((currExp.oper == chExp->oper) ^ val_negate >> 31) {// A&~(A|B)  ,  A|~(A&B)  , A&(A&B)  , A|(A|B)
+                    else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {
+                        walkClearVals(&currExp, expInfos, indexMapper);
+                        valsSet->insert(26u ^ !currExp.oper << 31);
+                        currExp.oper = boolOperator::NOTHING;
+                        anyEqsChanged = 1;
+                        valsQueue->clear();
+                        break;
+                    }
 
-                        valsSet->erase(val);
+                    else charVals.push_back(val);
+
+                }
+                if (valsSet->size() == 1) {
+                    size_t chVal = *valsSet->begin(), rawChVal = chVal & 0x7FFFFFFF, val_negate = chVal & 0x80000000;
+                    if (rawChVal > 26u) {// A&~A|(B&C) => B&C
+                        ExpressionInfo* chExp = &expInfos[indexMapper[rawChVal]];
+
+                        valsSet->erase(chVal);
+                        currExp.oper = chExp->oper;
 
                         for (size_t chVal : chExp->vals) {
                             chVal ^= val_negate;
                             if (valsSet->find(chVal) != valsSet->end())continue;
-                            valsQueue->push_back(chVal);
-                            valsSet->insert(chVal);
-                            if ((chVal & 0x7FFFFFFF) < 26u)charVals.push_back(chVal);
+                            valsSet->insert(chVal);//valsQueue->push_back(chVal);
                         }
-
-                        anyEqsChanged = 1;
 
                         chExp->vals.clear();
                         chExp->oper = boolOperator::NOTHING;
                     }
-
-                    else if (!val_negate) expRemain.push_back(val);
-                    else if (val_negate && currExp.oper == chExp->oper) { 
-                        chExp->flipEq();
-                        valsSet->erase(val);
-                        val &= 0x7FFFFFFF;
-                        valsSet->insert(val);
-                        expRemain.push_back(val);
-                    }
+                    else currExp.oper = boolOperator::NOTHING;
                 }
-
-                else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {
-                    walkClearVals(&currExp, expInfos, indexMapper);
-                    valsSet->insert(26u ^ !currExp.oper << 31);
-                    currExp.oper = boolOperator::NOTHING;
-                    anyEqsChanged = 1;
-                    valsQueue->clear();
-                    break;
-                }
-
-                else charVals.push_back(val);
-
-            }
-            if (valsSet->size() == 1) { 
-                size_t chVal = *valsSet->begin(), rawChVal = chVal & 0x7FFFFFFF, val_negate = chVal & 0x80000000;
-                if (rawChVal > 26u) {// A&~A|(B&C) => B&C
-                    ExpressionInfo * chExp = &expInfos[indexMapper[rawChVal]];
-
-                    valsSet->erase(chVal);
-                    currExp.oper = chExp->oper;
-
-                    for (size_t chVal : chExp->vals) {
-                        chVal ^= val_negate;
-                        if (valsSet->find(chVal) != valsSet->end())continue;
-                        valsSet->insert(chVal);//valsQueue->push_back(chVal);
-                    }
-
-                    chExp->vals.clear();
-                    chExp->oper = boolOperator::NOTHING;
-                }
-                else currExp.oper = boolOperator::NOTHING; 
-            }
-            else {
-                while (!expRemain.empty()) {
-                    size_t expVal = expRemain.front();
-                    ExpressionInfo* exp = &expInfos[indexMapper[expVal & 0x7FFFFFFF]];
-                    unordered_set<size_t>* chVals = &exp->vals;
-                    expRemain.pop_front();
-                    for (const size_t charVal : charVals) {
-                        if (chVals->find(charVal) != chVals->end()) {
-                            walkClearVals(exp, expInfos, indexMapper);
-                            exp->oper = boolOperator::NOTHING;
-                            valsSet->erase(expVal);
-                            anyEqsChanged = 1;
-                            break;
+                else {
+                    while (!expRemain.empty()) {
+                        size_t expVal = expRemain.front();
+                        ExpressionInfo* exp = &expInfos[indexMapper[expVal & 0x7FFFFFFF]];
+                        unordered_set<size_t>* chVals = &exp->vals;
+                        expRemain.pop_front();
+                        for (const size_t charVal : charVals) {
+                            if (chVals->find(charVal) != chVals->end()) {
+                                walkClearVals(exp, expInfos, indexMapper);
+                                exp->oper = boolOperator::NOTHING;
+                                valsSet->erase(expVal);
+                                anyEqsChanged = 1;
+                                break;
+                            }
+                            else if (chVals->find(charVal ^ 0x80000000) != chVals->end())
+                                chVals->erase(charVal ^ 0x80000000);
                         }
-                        else if (chVals->find(charVal ^ 0x80000000) != chVals->end())
-                            chVals->erase(charVal ^ 0x80000000);
-                    }
-                    if (chVals->size() == 1) {
-                        currExp.vals.insert(*chVals->begin());
-                        exp->oper = boolOperator::NOTHING;
-                        chVals->clear();
-                        valsSet->erase(expVal);
-                        anyEqsChanged = 1;
+                        if (chVals->size() == 1) {
+                            valsSet->erase(expVal);
+                            expVal = *chVals->begin();
+                            currExp.vals.insert(expVal);
+
+                            if ((expVal & 0x7FFFFFFF) > 26u)
+                                redo = 1;
+
+                            exp->oper = boolOperator::NOTHING;
+                            chVals->clear();
+                            
+                            anyEqsChanged = 1;
+                        }
                     }
                 }
-            }
+            } while (redo);
         }
 
         if (anyEqsChanged) 
