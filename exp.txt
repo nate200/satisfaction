@@ -86,6 +86,17 @@ C|A&B&~A&D|G
 (~(A&B&~A)&D)|C
 (~(A&B&~A))&D|C
 (~(A&B&~A)&E)&D|C
+((A&B&~A)&E)&D|C
+C|(~(A&B&~A))
+C|(~(A&B&~A)&D)
+C|(~(A&B&~A))&D
+C|(~(A&B&~A)&E)&D
+C|((A&B&~A)&E)&D
+C|(~(A&B&~A))|E
+C|(~(A&B&~A)&D)|E
+C|(~(A&B&~A))&D|E
+C|(~(A&B&~A)&E)&D|F
+C|((A&B&~A)&E)&D|F
 
 D&(A&B&~A)|C
 D&~(A&B&~A)|C
@@ -115,6 +126,10 @@ B&~~((~~(~(A|~A))))
 B&(A|~A)&C
 B&~(A|~A)&C
 B&~~((~~(~(A|~A))))&C
+B&~(A|~A)&C&(Z|~Y)&((A)&B|(C)&D|(E&G|C&G|~G)&(A))
+((A)&B|(C)&D|(E&G|C&G|~G)&(A))&B&~(A|~A)&C&(Z|~Y)
+((A)&B|(C)&D|(E&G|C&G|~G)&(A))&C&(Z|~Y)&B&~(A|~A)
+~(A|~A)&((A)&B|(C)&D|(E&G|C&G|~G)&(A))&C&(Z|~Y)&B
 
 ~((A&D)|(D&F)|A|~A)&B
 ((~(A&D)|(D&F)|A|~A)&B)

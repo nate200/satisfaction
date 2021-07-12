@@ -3,6 +3,7 @@
 #include<vector>
 #include<unordered_set>
 #include<algorithm>
+#include<deque>
 
 #include <time.h>
 #define FOR(i, n) for (size_t i = 0u; i < n; i++)
@@ -53,7 +54,7 @@ struct ExpressionBuilder {
         ExpressionInfo* baseLine = nullptr, * holdingChild = nullptr;//vector won't reallocate because of reserve(96);
         size_t foundNegate = 0;
 
-        vector<size_t> valsVec;
+        deque <size_t> valsQueue;
 
         ExpressionInfo(boolOperator oper, size_t expCounter, ExpressionInfo* baseLine = nullptr) : oper(oper), expIndex(expCounter), baseLine(&*baseLine) {}
 
@@ -99,9 +100,8 @@ struct ExpressionBuilder {
             valExp->vals.clear();
             valExp->oper = boolOperator::NOTHING;
         }
-        void addSetToVector() { 
-            valsVec.reserve(vals.size());
-            std::copy(vals.begin(), vals.end(), std::back_inserter(valsVec));
+        void addSetToQueue() { 
+            std::copy(vals.begin(), vals.end(), std::back_inserter(valsQueue));
         }
         inline bool operator<(const ExpressionInfo& exp) const
         {
@@ -264,7 +264,7 @@ struct ExpressionBuilder {
 
         size_t anyEqsChanged = 0;
         for (ExpressionInfo& exp : expInfos) { 
-            exp.addSetToVector();
+            exp.addSetToQueue();
             indexMapper[exp.expIndex] = anyEqsChanged++;
         }
         anyEqsChanged = 0;
@@ -272,49 +272,50 @@ struct ExpressionBuilder {
         for(ExpressionInfo & currExp : expInfos) {
 
             unordered_set<size_t>* valsSet = &currExp.vals;
-            vector<size_t>* valsVec = &currExp.valsVec;
+            deque<size_t>* valsQueue = &currExp.valsQueue;
 
-            FOR (i, valsVec->size()) {
-                const size_t val = valsVec->at(i);
-                size_t rawVal = val & 0x7FFFFFFF;
+            while(!valsQueue->empty()) {
+                const size_t val = valsQueue->front(), rawVal = val & 0x7FFFFFFF;
+                valsQueue->pop_front();
 
                 if (rawVal > 26u) {
                     size_t val_negate = val & 0x80000000;
                     ExpressionInfo* chExp = &expInfos[indexMapper[rawVal]];
 
-                    /*if (chExp->oper == boolOperator::NOTHING) {
-                        size_t chVal = *chExp->vals.begin(), raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
+                    if (chExp->oper == boolOperator::NOTHING) {//(1), (~3), (26), (~26), (31), (~31)
 
-                        if (raw_chVal == 26u && currExp.oper != (val_negate >> 31 ^ chVal >> 31)) {
+                        size_t chVal = *chExp->vals.begin() ^ val_negate, raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
+
+                        if(raw_chVal == 26 && currExp.oper != boolOperator::NOTHING && currExp.oper != (chVal >> 31)){
                             walkClearVals(&currExp, expInfos, indexMapper);
                             valsSet->insert(26u ^ !currExp.oper << 31);
                             currExp.oper = boolOperator::NOTHING;
+                            anyEqsChanged = 1;
+                            valsQueue->clear();
                             reduced = 1;
                         }
-                        else if (raw_chVal != 26u) {
-                            chVal ^= val_negate;
-                            if (valsSet->find(chVal) != valsSet->end())continue;
-                            valsVec->push_back(chVal);
+                        else {
+                            valsQueue->push_back(chVal);
                             valsSet->insert(chVal);
                         }
 
-                        chExp->oper = boolOperator::NOTHING;
                         chExp->vals.clear();
 
                         valsSet->erase(val);
 
                         anyEqsChanged = 1;
-
+                        
                         if (reduced)break;
                     }
-                    else */if ((currExp.oper == chExp->oper) ^ val_negate >> 31) {// A&~(A|B)  ,  A|~(A&B)  , A&(A&B)  , A|(A|B)
+
+                    else if ((currExp.oper == chExp->oper) ^ val_negate >> 31) {// A&~(A|B)  ,  A|~(A&B)  , A&(A&B)  , A|(A|B)
 
                         valsSet->erase(val);
 
                         for (size_t chVal : chExp->vals) {
                             chVal ^= val_negate;
                             if (valsSet->find(chVal) != valsSet->end())continue;
-                            valsVec->push_back(chVal);
+                            valsQueue->push_back(chVal);
                             valsSet->insert(chVal);
                         }
                         
@@ -330,13 +331,30 @@ struct ExpressionBuilder {
                     valsSet->insert(26u ^ !currExp.oper << 31);
                     currExp.oper = boolOperator::NOTHING;
                     anyEqsChanged = 1;
-                    valsVec->clear();
+                    valsQueue->clear();
                     break;
                 }
 
             }
-            if (valsSet->size() == 1)currExp.oper = boolOperator::NOTHING;
-            valsVec->clear();
+            if (valsSet->size() == 1) { 
+                size_t chVal = *valsSet->begin(), rawChVal = chVal & 0x7FFFFFFF, val_negate = chVal & 0x80000000;
+                if (rawChVal > 26u) {// A&~A|(B&C) => B&C
+                    ExpressionInfo * chExp = &expInfos[indexMapper[rawChVal]];
+
+                    valsSet->erase(chVal);
+                    currExp.oper = chExp->oper;
+
+                    for (size_t chVal : chExp->vals) {
+                        chVal ^= val_negate;
+                        if (valsSet->find(chVal) != valsSet->end())continue;
+                        valsSet->insert(chVal);//valsQueue->push_back(chVal);
+                    }
+
+                    chExp->vals.clear();
+                    chExp->oper = boolOperator::NOTHING;
+                }
+                else currExp.oper = boolOperator::NOTHING; 
+            }
         }
 
         if (anyEqsChanged) 
