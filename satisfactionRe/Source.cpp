@@ -364,38 +364,32 @@ struct ExpressionBuilder {
                 }
                 else currExp.oper = boolOperator::NOTHING; 
             }
-            /*else if(currExp.oper == boolOperator::AND){
+            else {//if(currExp.oper == boolOperator::OR){
                 while (!expRemain.empty()) {
                     size_t expVal = expRemain.front();
                     ExpressionInfo* exp = &expInfos[indexMapper[expVal & 0x7FFFFFFF]];
+                    unordered_set<size_t>* chVals = &exp->vals;
                     expRemain.pop_front();
                     for (const size_t charVal : charVals) {
-                        if (exp->vals.find(charVal) != exp->vals.end()) {
+                        if (chVals->find(charVal) != chVals->end()) {
                             walkClearVals(exp, expInfos, indexMapper);
                             exp->oper = boolOperator::NOTHING;
                             valsSet->erase(expVal);
                             anyEqsChanged = 1;
                             break;
                         }
+                        else if (chVals->find(charVal ^ 0x80000000) != chVals->end())
+                            chVals->erase(charVal ^ 0x80000000);
+                    }
+                    if (chVals->size() == 1) {
+                        currExp.vals.insert(*chVals->begin());
+                        exp->oper = boolOperator::NOTHING;
+                        chVals->clear();
+                        valsSet->erase(expVal);
+                        anyEqsChanged = 1;
                     }
                 }
             }
-            else {*/
-                while (!expRemain.empty()) {
-                    size_t expVal = expRemain.front();
-                    ExpressionInfo* exp = &expInfos[indexMapper[expVal  & 0x7FFFFFFF]];
-                    expRemain.pop_front();
-                    for (const size_t charVal : charVals) {
-                        if (exp->vals.find(charVal) != exp->vals.end()) {
-                            walkClearVals(exp, expInfos, indexMapper);
-                            exp->oper = boolOperator::NOTHING;
-                            valsSet->erase(expVal);
-                            anyEqsChanged = 1;
-                            break;
-                        }
-                    }
-                }
-            //}
         }
 
         if (anyEqsChanged) 
