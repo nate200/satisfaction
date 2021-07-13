@@ -301,7 +301,7 @@ struct ExpressionBuilder {
 
                             size_t chVal = *chExp->vals.begin() ^ val_negate, raw_chVal = chVal & 0x7FFFFFFF, reduced = 0;
 
-                            if (raw_chVal == 26 && currExp.oper != boolOperator::NOTHING && currExp.oper != (chVal >> 31)) {
+                            if (raw_chVal == 26 && currExp.oper != (chVal >> 31)) {
                                 walkClearVals(&currExp, expInfos, indexMapper);
                                 valsSet->insert(26u ^ !currExp.oper << 31);
                                 currExp.oper = boolOperator::NOTHING;
@@ -309,7 +309,7 @@ struct ExpressionBuilder {
                                 valsQueue->clear();
                                 reduced = 1;
                             }
-                            else {
+                            else {//why...WHYYYYYYYYYYY WHY I CAN'T USE THIS A&1=A AND A|0=A
                                 valsQueue->push_back(chVal);
                                 valsSet->insert(chVal);
                                 if (raw_chVal < 26u)charVals.push_back(chVal);
@@ -342,8 +342,8 @@ struct ExpressionBuilder {
                             chExp->oper = boolOperator::NOTHING;
                         }
 
-                        else if (!val_negate) expRemain.push_back(val);
-                        else if (val_negate && currExp.oper == chExp->oper) {
+                        else if (!val_negate) expRemain.push_back(val);//absorption law
+                        else if (val_negate && currExp.oper == chExp->oper) {//absorption law extra: A&~(A&B~) = A&~B
                             chExp->flipEq();
                             valsSet->erase(val);
                             val &= 0x7FFFFFFF;
@@ -352,7 +352,7 @@ struct ExpressionBuilder {
                         }
                     }
 
-                    else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {
+                    else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {//A&~A=0
                         walkClearVals(&currExp, expInfos, indexMapper);
                         valsSet->insert(26u ^ !currExp.oper << 31);
                         currExp.oper = boolOperator::NOTHING;
@@ -383,21 +383,21 @@ struct ExpressionBuilder {
                     }
                     else currExp.oper = boolOperator::NOTHING;
                 }
-                else {
+                else {//absorption law
                     while (!expRemain.empty()) {
                         size_t expVal = expRemain.front();
                         ExpressionInfo* exp = &expInfos[indexMapper[expVal & 0x7FFFFFFF]];
                         unordered_set<size_t>* chVals = &exp->vals;
                         expRemain.pop_front();
                         for (const size_t charVal : charVals) {
-                            if (chVals->find(charVal) != chVals->end()) {
+                            if (chVals->find(charVal) != chVals->end()) {//A&(A&B) = A
                                 walkClearVals(exp, expInfos, indexMapper);
                                 exp->oper = boolOperator::NOTHING;
                                 valsSet->erase(expVal);
                                 anyEqsChanged = 1;
                                 break;
                             }
-                            else if (chVals->find(charVal ^ 0x80000000) != chVals->end())
+                            else if (chVals->find(charVal ^ 0x80000000) != chVals->end())//A&~(A&B~) = A&~B
                                 chVals->erase(charVal ^ 0x80000000);
                         }
                         if (chVals->size() == 1) {
@@ -405,7 +405,7 @@ struct ExpressionBuilder {
                             expVal = *chVals->begin();
                             currExp.vals.insert(expVal);
 
-                            if ((expVal & 0x7FFFFFFF) > 26u)
+                            if ((expVal & 0x7FFFFFFF) > 26u)//A&(~A|(B&~C))&C => A&((B&~C))&C => A&B&~C&C => 0
                                 redo = 1;
 
                             exp->oper = boolOperator::NOTHING;
