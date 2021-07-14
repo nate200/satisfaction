@@ -352,6 +352,11 @@ struct ExpressionBuilder {
                         }
                     }
 
+                    else if (rawVal == 26) {
+                        if ((val >> 31) != currExp.oper)
+                            valsSet->erase(val);
+                    }
+
                     else if (valsSet->find(val ^ 0x80000000) != valsSet->end()) {//A&~A=0
                         walkClearVals(&currExp, expInfos, indexMapper);
                         valsSet->insert(26u ^ !currExp.oper << 31);
@@ -362,8 +367,8 @@ struct ExpressionBuilder {
                     }
 
                     else charVals.push_back(val);
-
                 }
+
                 if (valsSet->size() == 1) {
                     size_t chVal = *valsSet->begin(), rawChVal = chVal & 0x7FFFFFFF, val_negate = chVal & 0x80000000;
                     if (rawChVal > 26u) {// A&~A|(B&C) => B&C
