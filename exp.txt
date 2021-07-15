@@ -44,7 +44,15 @@ if B|~B|A&A|V then
 A&~A
 
 A&B&(A|~A)&B
+A&B&~(A|~A)&B
+A&B&(A&~A)&B
+A&B&~(A&~A)&B
+A&B&(A&~A)
+A&B&~(A&~A)
+A&B&(~(~(A&~A)))
+A&B&~((~~(A&~A)))
 B&(A|~(A&~A))
+(A|~(A&~A))&B
 
 A&~A&C&D
 C&D&A&~A
@@ -53,7 +61,20 @@ A&B&~A&C
 A&B&~A|C
 A&B&~A&D|C
 C|A&B&~A
+C|A&B&~A&D|D
+A&B&~A|C
+A&B&~A&D|C
+C|A&B&~A
+C|A&B&~A|D
 C|~(C|~C)&B&~A
+~(C|~C)&B&~A|C
+C|~(C|~C)&B&~A|D
+C|(~(C|~C)&B&~A)
+(~(C|~C)&B&~A)|C
+C|(~(C|~C)&B&~A)|D
+C|~(~(C|~C)&B&~A)
+~(~(C|~C)&B&~A)|C
+C|~(~(C|~C)&B&~A)|D
 C|A&B&~A|G
 C|A&B&~A&D
 C|A&B&~A&D|G
@@ -65,6 +86,17 @@ C|A&B&~A&D|G
 (~(A&B&~A)&D)|C
 (~(A&B&~A))&D|C
 (~(A&B&~A)&E)&D|C
+((A&B&~A)&E)&D|C
+C|(~(A&B&~A))
+C|(~(A&B&~A)&D)
+C|(~(A&B&~A))&D
+C|(~(A&B&~A)&E)&D
+C|((A&B&~A)&E)&D
+C|(~(A&B&~A))|E
+C|(~(A&B&~A)&D)|E
+C|(~(A&B&~A))&D|E
+C|(~(A&B&~A)&E)&D|F
+C|((A&B&~A)&E)&D|F
 
 D&(A&B&~A)|C
 D&~(A&B&~A)|C
@@ -94,6 +126,10 @@ B&~~((~~(~(A|~A))))
 B&(A|~A)&C
 B&~(A|~A)&C
 B&~~((~~(~(A|~A))))&C
+B&~(A|~A)&C&(Z|~Y)&((A)&B|(C)&D|(E&G|C&G|~G)&(A))
+((A)&B|(C)&D|(E&G|C&G|~G)&(A))&B&~(A|~A)&C&(Z|~Y)
+((A)&B|(C)&D|(E&G|C&G|~G)&(A))&C&(Z|~Y)&B&~(A|~A)
+~(A|~A)&((A)&B|(C)&D|(E&G|C&G|~G)&(A))&C&(Z|~Y)&B
 
 ~((A&D)|(D&F)|A|~A)&B
 ((~(A&D)|(D&F)|A|~A)&B)
@@ -199,9 +235,9 @@ Z|B&(~(A&D)|(D&F)|A|~A)&C|X
 Z|B&~~(~((A&D)|(D&F)|A|~A))&C|X
 
 
+(B&(A|~A))&B
 
-
-
+(~(((((A|~A)&(E&((A&~A))&B))&(C|~C)))|G))&B
 
 
 A|~A
@@ -211,6 +247,40 @@ A|B|~A|C
 A|B|~A|(A&B)
 (C&A)|B|~A
 
+A|B|~A|D&C
+
+________________________________________________________________________________________________________________________________________________________________________________________
+
+found negation? 
+	delete chExp
+found the same char? 
+	delete char in chExp
+
+B&(~F|~A&~G)|F
+(B|F)&(~F|~A&~G|F)
+B|F
+
+B&(F|~A&~G)|F
+(B|F)&(F|~A&~G|F)
+(B|F)&(~A&~G|F)
+B&(~A&~G)|F
+B&~A&~G|F
+
+(E|J|C|(~F&(~A|~G)))&F
+(E|J|C)&F
+
+(E|J|C|(F&(~A|~G)))&F
+(E|J|C|~A|~G)&F
+
+
+
+
+
 
 
 A|(B|C)|~(G&C)|(~Y|(Z|F)|((P|N)|~(J&O))|~(G&D))|Y
+
+
+~B&A|((~(~~B))|T&C&~A)&((~T&(~~C|A|J&A|D)&(N|~~K&(L&B&(~F|~A&~G))|F|~P))&(~(~(O&M|~D&M))|~E)|(~J&~H&A))&~(~(R&A|~I|~Q&A&~E)|~S)
+
+(A|C|D)&(A|~D|~E)&(A|~E|M)&(A|~E|O)&(A|F|N|~P)&(A|~I)&(A|S)&(A|~T)&~B

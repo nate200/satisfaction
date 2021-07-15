@@ -5,3 +5,4 @@ satisfactionRe/Debug
 .vs/
 randomizer/*
 !*.cpp
+v*.cpp
