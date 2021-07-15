@@ -342,14 +342,14 @@ struct ExpressionBuilder {
                             chExp->oper = boolOperator::NOTHING;
                         }
 
-                        else if (!val_negate) expRemain.push_back(val);//absorption law
-                        else if (val_negate && currExp.oper == chExp->oper) {//absorption law extra: A&~(A&B~) = A&~B
+                        else if (val_negate) {//absorption law extra: A&~(A&~B) = A&~B
                             chExp->flipEq();
                             valsSet->erase(val);
                             val &= 0x7FFFFFFF;
                             valsSet->insert(val);
                             expRemain.push_back(val);
                         }
+                        else expRemain.push_back(val);//absorption law
                     }
 
                     else if (rawVal == 26) {
@@ -402,7 +402,7 @@ struct ExpressionBuilder {
                                 anyEqsChanged = 1;
                                 break;
                             }
-                            else if (chVals->find(charVal ^ 0x80000000) != chVals->end())//A&~(A&B~) = A&~B
+                            else if (chVals->find(charVal ^ 0x80000000) != chVals->end())//A&~(A&~B) = A&~B
                                 chVals->erase(charVal ^ 0x80000000);
                         }
                         if (chVals->size() == 1) {
